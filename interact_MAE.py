@@ -32,6 +32,7 @@ import copy
 from vit_pytorch import ViT
 from my_MAE import my_MAE
 from einops import rearrange, repeat
+from data_loader import ZipImageNetFolder
 
 K_CLAS = 1000
 
