@@ -57,8 +57,8 @@ if not os.path.exists(save_path):
     
 # ======== Get Dataloader and tracking images ===================
 DATA_PATH = '/home/sg955/rds/hpc-work/ImageNet'
-traindir = os.path.join(DATA_PATH, 'train')
-valdir = os.path.join(DATA_PATH, 'val')
+traindir = os.path.join(DATA_PATH, 'train.zip')
+valdir = os.path.join(DATA_PATH, 'val.zip')
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 
 train_dataset = ZipImageNetFolder(
