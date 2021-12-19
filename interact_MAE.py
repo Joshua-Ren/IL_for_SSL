@@ -42,7 +42,7 @@ parser.add_argument('--resume', '-r', action='store_true', help='resume from che
 parser.add_argument('--batch_size',default=128, type=int)
 parser.add_argument('--seed',default=1,type=int)
 parser.add_argument('--proj_path',default='NIL_MAE', type=str)
-parser.add_argument('--epochs',default=1, type=int)
+parser.add_argument('--epochs',default=10, type=int)
 
 args = parser.parse_args()
 rnd_seed(args.seed)
@@ -61,7 +61,7 @@ traindir = os.path.join(DATA_PATH, 'train')
 valdir = os.path.join(DATA_PATH, 'val')
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 
-train_dataset = torchvision.datasets.ZipImageNetFolder(
+train_dataset = ZipImageNetFolder(
     traindir,
     transforms.Compose([
         transforms.RandomResizedCrop(224),
@@ -70,7 +70,7 @@ train_dataset = torchvision.datasets.ZipImageNetFolder(
         normalize,
     ]))
 
-val_dataset = torchvision.datasets.ZipImageNetFolder(
+val_dataset = ZipImageNetFolder(
     valdir,
     transforms.Compose([
         transforms.Resize(256),
