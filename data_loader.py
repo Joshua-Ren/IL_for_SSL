@@ -58,8 +58,8 @@ class ZipImageNetFolder(Dataset):
         name_list = self.zip_file.namelist()
         
         for name in name_list:
-            if len(name.split('/')[1]) == 0:
-                self.classes.append(name.split('/')[0])
+            if len(name.split('/')[-1]) == 0:
+                self.classes.append(name.split('/')[1])
             else:
                 self.name_list.append(name)
         
@@ -70,7 +70,7 @@ class ZipImageNetFolder(Dataset):
     
     def make_dataset(self):
         for name in self.name_list:
-            class_name = name.split('/')[0]
+            class_name = name.split('/')[1]
             class_index = self.class_to_idx[class_name]
             item = name, class_index
             self.samples.append(item)
