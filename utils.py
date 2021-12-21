@@ -8,6 +8,7 @@ import torch
 import wandb
 import random
 import numpy as np
+import os
 
 WANDB_track_figs = 4
 
@@ -19,7 +20,21 @@ def rnd_seed(seed):
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
 
-
+def checkpoint_save_interact(mae, g, save_path):
+    path = os.path.join(save_path,'checkpoint')
+    if not os.path.exists(path):
+        os.makedirs(path) 
+    file_name = 'encoder_ep'+str(g)+'.pt'
+    path = os.path.join(path, file_name)
+    torch.save(mae.encoder.state_dict(), path)
+    
+def checkpoint_save_pretrain(encoder, g, save_path):
+    path = os.path.join(save_path,'checkpoint')
+    if not os.path.exists(path):
+        os.makedirs(path) 
+    file_name = 'encoder_ep'+str(g)+'.pt'
+    path = os.path.join(path, file_name)
+    torch.save(encoder.state_dict(), path)
 
 # ================== Functions about wandb ===================================
 def wandb_gen_track_x(train_loader,val_loader):
@@ -41,7 +56,12 @@ def wandb_init(proj_name='test', run_name=None):
         return run_name
     else:
         return wandb.run.name
-    
+
+def wandb_record_results(results, epoch):
+  for key in results.keys():
+    wandb.log({key:results[key][-1]})
+  wandb.log({'epoch':epoch})
+
 def wandb_show16imgs(recon_imgs, origi_imgs, table_key='initial', ds_ratio=4):
     '''
         Show (n+n)*2 images in a table with table_key:
