@@ -10,7 +10,6 @@ import torch.nn.functional as F
 #import cv2
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import ToTensor
-import torchvision
 
 class ZipImageNetFolder(Dataset):
     """A data loader for ImageNet in zip file, the zip file should contain:
@@ -82,9 +81,6 @@ class ZipImageNetFolder(Dataset):
         img = Image.open(fh)
         img.convert('RGB')
         x = img
-        print(type(x))
-        trans = torchvision.transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.size(0)==1 else x)
-        x = trans(x)
         if self.transform is not None:
             x = self.transform(x)
         # ! TODO: change back to
