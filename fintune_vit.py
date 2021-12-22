@@ -103,7 +103,7 @@ for g in range(args.epochs):
         optimizer.zero_grad()
         x, y = x.to(device), y.to(device)
         hid = encoder(x)
-        loss = nn.CrossEntropyLoss('mean')(hid, y)
+        loss = nn.CrossEntropyLoss()(hid, y)
         loss.backward()
         optimizer.step() 
         wandb.log({'loss':loss.item()})
