@@ -25,7 +25,7 @@ K_CLAS = 100
 parser = argparse.ArgumentParser(description='ImageNet1K-Finetune')
 parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
-parser.add_argument('--batch_size',default=32, type=int)
+parser.add_argument('--batch_size',default=128, type=int)
 parser.add_argument('--seed',default=1,type=int)
 parser.add_argument('--proj_path',default='Finetune_MAE', type=str)
 parser.add_argument('--epochs',default=1, type=int)
@@ -36,7 +36,7 @@ rnd_seed(args.seed)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # ======== Set results saving things ========================
-run_name = wandb_init(proj_name=args.proj_path, run_name=None)
+run_name = wandb_init(proj_name=args.proj_path, run_name=None, config_args=args)
 #run_name = 'add'
 save_path = './results/FineTune/run_'+run_name
 if not os.path.exists(save_path):
@@ -128,3 +128,4 @@ for g in range(args.epochs):
     wandb_record_results(results, g)
     if g%50 == 0:
         checkpoint_save_pretrain(encoder, g, save_path)
+        

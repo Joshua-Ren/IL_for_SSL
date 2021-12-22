@@ -46,11 +46,12 @@ def wandb_gen_track_x(train_loader,val_loader):
     track_vx = x[:WANDB_track_figs]
     return torch.cat((track_tx,track_vx),0)
 
-def wandb_init(proj_name='test', run_name=None):
+def wandb_init(proj_name='test', run_name=None, config_args=None):
     wandb.init(
         project=proj_name,
-        config={
-      })
+        config={})
+    if config_args is not None:
+        wandb.config.update(config_args)
     if run_name is not None:
         wandb.run.name=run_name
         return run_name
