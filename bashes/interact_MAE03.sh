@@ -19,4 +19,4 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python interact_MAE.py --batch_size 2048 --lr 1e-2
+srun python interact_MAE.py --batch_size 2048
