@@ -39,7 +39,7 @@ K_CLAS = 100
 parser = argparse.ArgumentParser(description='ImageNet1K-MAE')
 parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
-parser.add_argument('--batch_size',default=2048, type=int)
+parser.add_argument('--batch_size',default=1024, type=int)
 parser.add_argument('--seed',default=10086,type=int)
 parser.add_argument('--proj_path',default='Interact_MAE', type=str)
 parser.add_argument('--epochs',default=1000, type=int)
@@ -59,10 +59,12 @@ if not os.path.exists(save_path):
 train_T=transforms.Compose([
                     transforms.RandomCrop(32, padding=4),
                     transforms.RandomHorizontalFlip(),
-                        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
                     ])
 val_T =transforms.Compose([
-                        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
                     ])
 train_loader = torch.utils.data.DataLoader(
     torchvision.datasets.CIFAR100('./data', train=True, download=True, transform=train_T),batch_size=args.batch_size, shuffle=True, drop_last=True)
@@ -102,11 +104,10 @@ for g in range(args.epochs):
         loss.backward()
         optimizer.step() 
         wandb.log({'loss':loss.item()})
-        break
     _recon_validate(mae,table_key='latest')
-if g%50 == 0:
-    _recon_validate(mae,table_key='epoch_'+str(g))
-    checkpoint_save_interact(mae, g, save_path)
+    if g%50 == 0:
+        _recon_validate(mae,table_key='epoch_'+str(g))
+        checkpoint_save_interact(mae, g, save_path)
     
 
 
