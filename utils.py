@@ -10,7 +10,7 @@ import random
 import numpy as np
 import os
 
-WANDB_track_figs = 4
+WANDB_track_figs = 6
 
 def rnd_seed(seed):
     random.seed(seed)

@@ -34,7 +34,7 @@ from my_MAE import my_MAE
 from einops import rearrange, repeat
 from data_loader import ZipImageNetFolder
 
-K_CLAS = 1000
+K_CLAS = 100
 
 parser = argparse.ArgumentParser(description='ImageNet1K-MAE')
 parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
@@ -56,39 +56,25 @@ if not os.path.exists(save_path):
     os.makedirs(save_path)
     
 # ======== Get Dataloader and tracking images ===================
-DATA_PATH = '/home/sg955/rds/hpc-work/ImageNet/'
-traindir = os.path.join(DATA_PATH, 'train.zip')
-valdir = os.path.join(DATA_PATH, 'val.zip')
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
+train_T=transforms.Compose([
+                    transforms.RandomCrop(32, padding=4),
+                    transforms.RandomHorizontalFlip(),
+                        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                    ])
+val_T =transforms.Compose([
+                        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                    ])
+train_loader = torch.utils.data.DataLoader(
+    torchvision.datasets.CIFAR100('./data', train=True, download=True, transform=train_T),batch_size=args.batch_size, shuffle=True, drop_last=True)
+val_loader = torch.utils.data.DataLoader(
+    torchvision.datasets.CIFAR100('./data', train=False, download=True, transform=val_T),batch_size=10000, shuffle=False, drop_last=True)
 
-train_dataset = ZipImageNetFolder(
-    traindir,
-    transforms.Compose([
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.size(0)==1 else x),
-        normalize,
-    ]))
-
-val_dataset = ZipImageNetFolder(
-    valdir,
-    transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.size(0)==1 else x),
-        normalize,
-    ]))
-
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
 TRACK_TVX = TRACK_TVX.to(device)
 
 # ====================== Interaction phase: MAE ===============================
 # ---------- Prepare the model, optimizer, scheduler
-encoder = ViT(image_size = 224, patch_size = 16, num_classes = 1000,
+encoder = ViT(image_size = 32, patch_size = 8, num_classes = K_CLAS,
               dim = 1024, depth = 6, heads = 8, mlp_dim = 2048)
 mae = my_MAE(encoder=encoder, masking_ratio = 0.75, decoder_dim = 512, decoder_depth=1).to(device)
 optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05)
@@ -102,9 +88,9 @@ def _recon_validate(mae,table_key='initial'):
     '''
     loss, recon_img_patches = mae(TRACK_TVX)
     recon_imgs = rearrange(recon_img_patches, 'b (h w) (p1 p2 c) -> b c (h p1) (w p2)', 
-                               h=14,w=14,c=3, p1=16,p2=16)
+                               h=4,w=4,c=3, p1=8,p2=8)
     origi_imgs = TRACK_TVX
-    wandb_show16imgs(recon_imgs, origi_imgs, table_key=table_key, ds_ratio=2)
+    wandb_show16imgs(recon_imgs, origi_imgs, table_key=table_key, ds_ratio=1)
 
 
 # ---------- Train the model
