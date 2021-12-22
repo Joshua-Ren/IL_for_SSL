@@ -19,4 +19,4 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python interact_MAE.py 
+srun python interact_MAE.py
