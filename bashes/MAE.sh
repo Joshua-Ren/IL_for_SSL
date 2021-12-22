@@ -6,7 +6,7 @@
 #SBATCH --output=./logs/test.txt
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=20GB
+#SBATCH --mem-per-cpu=40GB
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
 
@@ -17,6 +17,6 @@ module load python/3.8 cuda/11.0 cudnn/8.0_cuda-11.1
 
 source /home/sg955/egg-env/bin/activate
 
-cd /home/sg955/GitWS/better_supervision/
+cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python main_50_to_18_difftemp_table1.py 
+srun python interact_MAE.py 

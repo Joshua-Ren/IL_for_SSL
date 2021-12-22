@@ -39,10 +39,10 @@ K_CLAS = 1000
 parser = argparse.ArgumentParser(description='ImageNet1K-MAE')
 parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
-parser.add_argument('--batch_size',default=128, type=int)
+parser.add_argument('--batch_size',default=4096, type=int)
 parser.add_argument('--seed',default=1,type=int)
-parser.add_argument('--proj_path',default='NIL_MAE', type=str)
-parser.add_argument('--epochs',default=10, type=int)
+parser.add_argument('--proj_path',default='Interact_MAE', type=str)
+parser.add_argument('--epochs',default=1000, type=int)
 
 args = parser.parse_args()
 rnd_seed(args.seed)
@@ -88,7 +88,7 @@ TRACK_TVX = TRACK_TVX.to(device)
 
 # ====================== Interaction phase: MAE ===============================
 # ---------- Prepare the model, optimizer, scheduler
-encoder = ViT(image_size = 256, patch_size = 16, num_classes = 1000,
+encoder = ViT(image_size = 224, patch_size = 16, num_classes = 1000,
               dim = 1024, depth = 6, heads = 8, mlp_dim = 2048)
 mae = my_MAE(encoder=encoder, masking_ratio = 0.75, decoder_dim = 512, decoder_depth=1).to(device)
 optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05)
@@ -106,13 +106,6 @@ def _recon_validate(mae,table_key='initial'):
     origi_imgs = TRACK_TVX
     wandb_show16imgs(recon_imgs, origi_imgs, table_key=table_key, ds_ratio=2)
 
-def _checkpoint_save(mae, g):
-    path = os.path.join(save_path,'checkpoint')
-    if not os.path.exists(path):
-        os.makedirs(path) 
-    file_name = 'encoder_ep'+str(g)+'.pt'
-    path = os.path.join(path, file_name)
-    torch.save(mae.encoder.state_dict(), path)
 
 # ---------- Train the model
 for g in range(args.epochs):
@@ -126,7 +119,7 @@ for g in range(args.epochs):
     _recon_validate(mae,table_key='latest')
 if g%50 == 0:
     _recon_validate(mae,table_key='epoch_'+str(g))
-    _checkpoint_save(mae, g)
+    checkpoint_save_interact(mae, g, save_path)
     
 
 
