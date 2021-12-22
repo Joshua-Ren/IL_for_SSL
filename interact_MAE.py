@@ -116,6 +116,7 @@ for g in range(args.epochs):
         loss.backward()
         optimizer.step() 
         wandb.log({'loss':loss.item()})
+        break
     _recon_validate(mae,table_key='latest')
 if g%50 == 0:
     _recon_validate(mae,table_key='epoch_'+str(g))
