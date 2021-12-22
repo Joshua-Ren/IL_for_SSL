@@ -76,9 +76,9 @@ TRACK_TVX = TRACK_TVX.to(device)
 
 # ====================== Interaction phase: MAE ===============================
 # ---------- Prepare the model, optimizer, scheduler
-encoder = ViT(image_size = 32, patch_size = 8, num_classes = K_CLAS,
-              dim = 1024, depth = 6, heads = 8, mlp_dim = 2048)
-mae = my_MAE(encoder=encoder, masking_ratio = 0.75, decoder_dim = 512, decoder_depth=1).to(device)
+encoder = ViT(image_size = 32, patch_size = 4, num_classes = K_CLAS,
+              dim = 256, depth = 3, heads = 4, mlp_dim = 512)
+mae = my_MAE(encoder=encoder, masking_ratio = 0.75, decoder_dim = 256, decoder_depth=1).to(device)
 optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
 

@@ -19,4 +19,4 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python finetune_vit.py --batch_size 1024
+srun python finetune_vit.py --batch_size 2048 --checkpoint_name encoder_ep0.pt

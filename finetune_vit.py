@@ -30,6 +30,7 @@ parser.add_argument('--seed',default=1,type=int)
 parser.add_argument('--proj_path',default='Finetune_MAE', type=str)
 parser.add_argument('--epochs',default=500, type=int)
 parser.add_argument('--checkpoint_path',default='MAE/run_ethereal-moon-13/checkpoint',type=str)
+parser.add_argument('--checkpoint_name',default='encoder_ep0.pt',type=str)
 
 args = parser.parse_args()
 rnd_seed(args.seed)
@@ -61,10 +62,10 @@ val_loader = torch.utils.data.DataLoader(
 
 # ====================== Fine-tune phase: 1k classification ===================
 # ---------- Prepare (load) the model, optimizer, scheduler
-encoder = ViT(image_size = 32, patch_size = 8, num_classes = K_CLAS,
-              dim = 1024, depth = 6, heads = 8, mlp_dim = 2048)
+encoder = ViT(image_size = 32, patch_size = 4, num_classes = K_CLAS,
+              dim = 256, depth = 3, heads = 4, mlp_dim = 512)
 encoder.to(device)
-chkp_name = 'encoder_ep0.pt'
+chkp_name = args.checkpoint_name
 chkp_path = os.path.join('./results/', args.checkpoint_path,chkp_name)
 encoder.load_state_dict(torch.load(chkp_path))
 
@@ -94,11 +95,11 @@ def get_validation(model, data_loader):
 # ---------- Train the model
 results = {'tacc':[],'tloss':[],'vacc':[],'vloss':[],'bestg_ac':[],'bestg_lo':[]}
 loss_all = 0
-corr_cnt, sample_cnt = 0, 0
 vacc_max, vloss_min = 0, 10
 bestg_ac, bestg_lo = 0, 0
 
 for g in range(args.epochs):
+    corr_cnt, sample_cnt = 0, 0
     for i, (x, y) in enumerate(train_loader):
         optimizer.zero_grad()
         x, y = x.to(device), y.to(device)
@@ -117,8 +118,10 @@ for g in range(args.epochs):
     vacc, vloss = get_validation(encoder, val_loader)
     if vacc >= vacc_max:
         bestg_ac = g
+        vacc_max = vacc
     if vloss <= vloss_min:
         bestg_lo = g
+        vloss_min = vloss
     results['bestg_ac'].append(bestg_ac)
     results['bestg_lo'].append(bestg_lo)
     results['tacc'].append(corr_cnt/sample_cnt)
