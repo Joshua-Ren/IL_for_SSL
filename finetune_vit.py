@@ -25,10 +25,10 @@ K_CLAS = 100
 parser = argparse.ArgumentParser(description='ImageNet1K-Finetune')
 parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
-parser.add_argument('--batch_size',default=128, type=int)
+parser.add_argument('--batch_size',default=1024, type=int)
 parser.add_argument('--seed',default=1,type=int)
 parser.add_argument('--proj_path',default='Finetune_MAE', type=str)
-parser.add_argument('--epochs',default=1, type=int)
+parser.add_argument('--epochs',default=500, type=int)
 parser.add_argument('--checkpoint_path',default='MAE/run_ethereal-moon-13/checkpoint',type=str)
 
 args = parser.parse_args()
