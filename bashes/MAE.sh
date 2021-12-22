@@ -6,7 +6,7 @@
 #SBATCH --output=./logs/test.txt
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=40GB
+#SBATCH --mem-per-cpu=20GB
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
 
