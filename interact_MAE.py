@@ -49,7 +49,7 @@ rnd_seed(args.seed)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # ======== Set results saving things ========================
-run_name = wandb_init(proj_name=args.proj_path, run_name=None)
+run_name = wandb_init(proj_name=args.proj_path, run_name=None, config_args=args)
 #run_name = 'add'
 save_path = './results/MAE/run_'+run_name
 if not os.path.exists(save_path):
