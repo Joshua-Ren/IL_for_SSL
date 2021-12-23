@@ -19,4 +19,4 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python finetune_vit.py --batch_size 2048 --from_chkp False --run_name baseline2 --checkpoint_name xxxx
+srun python finetune_vit.py --batch_size 2048 --run_name baseline --init_vit --checkpoint_name xxxx

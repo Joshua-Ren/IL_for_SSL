@@ -24,7 +24,7 @@ K_CLAS = 100
 
 parser = argparse.ArgumentParser(description='ImageNet1K-Finetune')
 parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
-parser.add_argument('--from_chkp', default=True, type=bool)
+parser.add_argument('--init_vit', action='store_true')
 parser.add_argument('--batch_size',default=1024, type=int)
 parser.add_argument('--seed',default=1,type=int)
 parser.add_argument('--proj_path',default='Finetune_MAE', type=str)
@@ -68,7 +68,7 @@ encoder = ViT(image_size = 32, patch_size = 4, num_classes = K_CLAS,
               dim = 256, depth = 3, heads = 4, mlp_dim = 512)
 encoder.to(device)
 
-if args.from_chkp:
+if not args.init_vit:
     chkp_path = os.path.join('./results/MAE', args.checkpoint_run, 'checkpoint', args.checkpoint_name)
     encoder.load_state_dict(torch.load(chkp_path))
 
