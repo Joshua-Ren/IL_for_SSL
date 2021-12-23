@@ -43,6 +43,7 @@ parser.add_argument('--batch_size',default=1024, type=int)
 parser.add_argument('--seed',default=10086,type=int)
 parser.add_argument('--proj_path',default='Interact_MAE', type=str)
 parser.add_argument('--epochs',default=1000, type=int)
+parser.add_argument('--mask_ratio',default=0.5,type=float)
 
 args = parser.parse_args()
 rnd_seed(args.seed)
@@ -78,7 +79,7 @@ TRACK_TVX = TRACK_TVX.to(device)
 # ---------- Prepare the model, optimizer, scheduler
 encoder = ViT(image_size = 32, patch_size = 4, num_classes = K_CLAS,
               dim = 256, depth = 3, heads = 4, mlp_dim = 512)
-mae = my_MAE(encoder=encoder, masking_ratio = 0.50, decoder_dim = 256, decoder_depth=1).to(device)
+mae = my_MAE(encoder=encoder, masking_ratio = args.mask_ratio, decoder_dim = 256, decoder_depth=1).to(device)
 optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
 

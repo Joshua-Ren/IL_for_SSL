@@ -29,8 +29,9 @@ parser.add_argument('--batch_size',default=1024, type=int)
 parser.add_argument('--seed',default=1,type=int)
 parser.add_argument('--proj_path',default='Finetune_MAE', type=str)
 parser.add_argument('--epochs',default=500, type=int)
-parser.add_argument('--checkpoint_path',default='MAE/run_ethereal-moon-13/checkpoint',type=str)
+parser.add_argument('--checkpoint_run',default='run_dazzling-dew-2',type=str)
 parser.add_argument('--checkpoint_name',default='encoder_ep0.pt',type=str)
+
 
 args = parser.parse_args()
 rnd_seed(args.seed)
@@ -65,8 +66,8 @@ val_loader = torch.utils.data.DataLoader(
 encoder = ViT(image_size = 32, patch_size = 4, num_classes = K_CLAS,
               dim = 256, depth = 3, heads = 4, mlp_dim = 512)
 encoder.to(device)
-chkp_name = args.checkpoint_name
-chkp_path = os.path.join('./results/', args.checkpoint_path,chkp_name)
+
+chkp_path = os.path.join('./results/MAE', args.checkpoint_run, 'checkpoint', args.checkpoint_name)
 encoder.load_state_dict(torch.load(chkp_path))
 
 optimizer = optim.AdamW(encoder.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=0.05)
