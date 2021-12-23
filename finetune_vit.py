@@ -72,7 +72,8 @@ if not args.init_vit:
     chkp_path = os.path.join('./results/MAE', args.checkpoint_run, 'checkpoint', args.checkpoint_name)
     encoder.load_state_dict(torch.load(chkp_path))
 
-optimizer = optim.AdamW(encoder.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=0.05)
+#optimizer = optim.AdamW(encoder.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=0.05)
+optimizer = optim.SGD(encoder.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=1e-5)
 
 
