@@ -80,7 +80,7 @@ def get_validation(model, data_loader):
     loss_all = 0
     corr_cnt, sample_cnt = 0, 0
     with torch.no_grad():
-        for i, (x, y) in enumerate(train_loader):
+        for i, (x, y) in enumerate(data_loader):
             print(i,end='-')
             x, y = x.to(device), y.to(device)
             hid = model(x)
@@ -95,12 +95,11 @@ def get_validation(model, data_loader):
 
 # ---------- Train the model
 results = {'tacc':[],'tloss':[],'vacc':[],'vloss':[],'bestg_ac':[],'bestg_lo':[]}
-loss_all = 0
 vacc_max, vloss_min = 0, 10
 bestg_ac, bestg_lo = 0, 0
 
 for g in range(args.epochs):
-    corr_cnt, sample_cnt = 0, 0
+    loss_all, corr_cnt, sample_cnt = 0, 0, 0
     for i, (x, y) in enumerate(train_loader):
         optimizer.zero_grad()
         x, y = x.to(device), y.to(device)
