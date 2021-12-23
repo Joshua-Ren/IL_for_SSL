@@ -44,13 +44,14 @@ parser.add_argument('--seed',default=10086,type=int)
 parser.add_argument('--proj_path',default='Interact_MAE', type=str)
 parser.add_argument('--epochs',default=1000, type=int)
 parser.add_argument('--mask_ratio',default=0.5,type=float)
+parser.add_argument('--run_name',default=None,type=str)
 
 args = parser.parse_args()
 rnd_seed(args.seed)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # ======== Set results saving things ========================
-run_name = wandb_init(proj_name=args.proj_path, run_name=None, config_args=args)
+run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
 #run_name = 'add'
 save_path = './results/MAE/run_'+run_name
 if not os.path.exists(save_path):
@@ -78,8 +79,8 @@ TRACK_TVX = TRACK_TVX.to(device)
 # ====================== Interaction phase: MAE ===============================
 # ---------- Prepare the model, optimizer, scheduler
 encoder = ViT(image_size = 32, patch_size = 4, num_classes = K_CLAS,
-              dim = 512, depth = 6, heads = 16, mlp_dim = 1024, dropout=0.1, emb_dropout=0.1)
-mae = my_MAE(encoder=encoder, masking_ratio = args.mask_ratio, decoder_dim = 256, decoder_depth=1).to(device)
+              dim = 512, depth = 6, heads = 16, mlp_dim = 1024)
+mae = my_MAE(encoder=encoder, masking_ratio = args.mask_ratio, decoder_dim = 256, decoder_depth=2).to(device)
 optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
 
