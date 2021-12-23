@@ -24,13 +24,14 @@ K_CLAS = 100
 
 parser = argparse.ArgumentParser(description='ImageNet1K-Finetune')
 parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
-parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
+parser.add_argument('--from_chkp', default=True, type=bool)
 parser.add_argument('--batch_size',default=1024, type=int)
 parser.add_argument('--seed',default=1,type=int)
 parser.add_argument('--proj_path',default='Finetune_MAE', type=str)
 parser.add_argument('--epochs',default=500, type=int)
 parser.add_argument('--checkpoint_run',default='run_dazzling-dew-2',type=str)
 parser.add_argument('--checkpoint_name',default='encoder_ep0.pt',type=str)
+parser.add_argument('--run_name',default=None,type=str)
 
 
 args = parser.parse_args()
@@ -38,7 +39,7 @@ rnd_seed(args.seed)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # ======== Set results saving things ========================
-run_name = wandb_init(proj_name=args.proj_path, run_name=None, config_args=args)
+run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
 #run_name = 'add'
 save_path = './results/FineTune/run_'+run_name
 if not os.path.exists(save_path):
@@ -67,8 +68,9 @@ encoder = ViT(image_size = 32, patch_size = 4, num_classes = K_CLAS,
               dim = 256, depth = 3, heads = 4, mlp_dim = 512)
 encoder.to(device)
 
-chkp_path = os.path.join('./results/MAE', args.checkpoint_run, 'checkpoint', args.checkpoint_name)
-encoder.load_state_dict(torch.load(chkp_path))
+if args.from_chkp:
+    chkp_path = os.path.join('./results/MAE', args.checkpoint_run, 'checkpoint', args.checkpoint_name)
+    encoder.load_state_dict(torch.load(chkp_path))
 
 optimizer = optim.AdamW(encoder.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=0.05)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=1e-5)
