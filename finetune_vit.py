@@ -65,7 +65,7 @@ val_loader = torch.utils.data.DataLoader(
 # ====================== Fine-tune phase: 1k classification ===================
 # ---------- Prepare (load) the model, optimizer, scheduler
 encoder = ViT(image_size = 32, patch_size = 4, num_classes = K_CLAS,
-              dim = 256, depth = 3, heads = 4, mlp_dim = 512)
+              dim = 512, depth = 6, heads = 16, mlp_dim = 1024, dropout=0.1, emb_dropout=0.1)
 encoder.to(device)
 
 if not args.init_vit:
