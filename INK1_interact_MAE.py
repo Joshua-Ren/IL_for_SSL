@@ -83,8 +83,8 @@ val_dataset = torchvision.datasets.ImageFolder(
         normalize,
     ]))
 
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,pin_memory=True)
-val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,pin_memory=True)
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_wokers=16, pin_memory=True)
+val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_wokers=16,pin_memory=True)
 TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
 TRACK_TVX = TRACK_TVX.to(device)
 
