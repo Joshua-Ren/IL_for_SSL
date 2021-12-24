@@ -77,8 +77,8 @@ if __name__ == '__main__':
     # iteration of DALI dataloader
     pip_train = HybridTrainPipe(batch_size=TRAIN_BS, num_threads=NUM_WORKERS, device_id=0, data_dir=IMG_DIR+'/val', crop=CROP_SIZE, world_size=1, local_rank=0)
     pip_test = HybridValPipe(batch_size=TEST_BS, num_threads=NUM_WORKERS, device_id=0, data_dir=IMG_DIR+'/val', crop=CROP_SIZE, size=VAL_SIZE, world_size=1, local_rank=0)
-    train_loader = DALIDataloader(pipeline=pip_train, size=IMAGENET_IMAGES_NUM_TRAIN, batch_size=TRAIN_BS, onehot_label=False)
-    test_loader = DALIDataloader(pipeline=pip_test, size=IMAGENET_IMAGES_NUM_TEST, batch_size=TEST_BS, onehot_label=False)
+    train_loader = DALIDataloader(pipeline=pip_train, size=50000, batch_size=TRAIN_BS, onehot_label=False)
+    test_loader = DALIDataloader(pipeline=pip_test, size=50000, batch_size=TEST_BS, onehot_label=False)
     # print("[DALI] train dataloader length: %d"%len(train_loader))
     # print('[DALI] start iterate train dataloader')
     # start = time.time()
