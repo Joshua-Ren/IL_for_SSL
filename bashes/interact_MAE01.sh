@@ -4,11 +4,8 @@
 #SBATCH --time=36:00:00
 #SBATCH --job-name=mae
 #SBATCH --output=./logs/test.txt
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=32GB
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:4
 
 . /etc/profile.d/modules.sh
 module purge

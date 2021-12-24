@@ -59,7 +59,7 @@ if not os.path.exists(save_path):
     
 # ======== Get Dataloader and tracking images ===================
 DATA_PATH = '/home/sg955/rds/hpc-work/ImageNet/'
-traindir = os.path.join(DATA_PATH, 'train.zip')
+traindir = os.path.join(DATA_PATH, 'val.zip')
 valdir = os.path.join(DATA_PATH, 'val.zip')
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 
@@ -83,8 +83,8 @@ val_dataset = ZipImageNetFolder(
         normalize,
     ]))
 
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,pin_memory=True)
+val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,pin_memory=True)
 TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
 TRACK_TVX = TRACK_TVX.to(device)
 
