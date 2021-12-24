@@ -19,4 +19,4 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python INK1_interact_MAE.py --run_name hopetowork
+srun python INK1_interact_MAE.py --run_name valusual
