@@ -93,7 +93,7 @@ if __name__ == '__main__':
     print('[DALI] start iterate test dataloader')
     start = time.time()
     for i, data in enumerate(test_loader):
-        data = data.cuda()
+        print(data[0])
         images = data[0].cuda(non_blocking=True)
         labels = data[1].cuda(non_blocking=True)
     end = time.time()
@@ -134,7 +134,6 @@ if __name__ == '__main__':
     print('[PyTorch] start iterate test dataloader')
     start = time.time()
     for i, data in enumerate(test_loader):
-        data = data.cuda()
         images = data[0].cuda(non_blocking=True)
         labels = data[1].cuda(non_blocking=True)
     end = time.time()
