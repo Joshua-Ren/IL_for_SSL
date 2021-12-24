@@ -1,12 +1,12 @@
 from nvidia.dali.plugin.pytorch import DALIGenericIterator
 
 class DALIDataloader(DALIGenericIterator):
-    def __init__(self, pipeline, nsize, batch_size, output_map=["data", "label"], auto_reset=True, onehot_label=False):
-        self.size = nsize
+    def __init__(self, pipeline, nsize=50000, batch_size=64, output_map=["data", "label"], auto_reset=True, onehot_label=False):
+        self.nsize = nsize
         self.batch_size = batch_size
         self.onehot_label = onehot_label
         self.output_map = output_map   
-        super().__init__(pipelines=pipeline, size=nsize, auto_reset=auto_reset, output_map=output_map)
+        super().__init__(pipelines=pipeline, nsize=nsize, auto_reset=auto_reset, output_map=output_map)
 
     def __next__(self):
         if self._first_batch is not None:
@@ -20,7 +20,7 @@ class DALIDataloader(DALIGenericIterator):
             return [data[self.output_map[0]], data[self.output_map[1]]]
     
     def __len__(self):
-        if self.size%self.batch_size==0:
-            return self.size//self.batch_size
+        if self.nsize%self.batch_size==0:
+            return self.nsize//self.batch_size
         else:
-            return self.size//self.batch_size+1
+            return self.nsize//self.batch_size+1
