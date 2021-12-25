@@ -16,4 +16,4 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python INK1_interact_MAE_Old.py --run_name Old
+srun python INK1_interact_MAE_Old.py --run_name Old02

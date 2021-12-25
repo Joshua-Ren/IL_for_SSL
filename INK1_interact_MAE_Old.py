@@ -37,7 +37,7 @@ K_CLAS = 100
 parser = argparse.ArgumentParser(description='ImageNet1K-MAE')
 parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
-parser.add_argument('--batch_size',default=2048, type=int)
+parser.add_argument('--batch_size',default=512, type=int)
 parser.add_argument('--seed',default=10086,type=int)
 parser.add_argument('--proj_path',default='INK1_Interact_MAE', type=str)
 parser.add_argument('--epochs',default=1000, type=int)
