@@ -61,24 +61,26 @@ if __name__ == '__main__':
     print('[DALI-GPU] start iterate train dataloader')
     start = time.time()
     for i, data in enumerate(train_loader):
+        if i%5==0:
+            print(i,end='-')
         images = data[0]['data'].cuda()
         labels = data[0]['label'].cuda()
     end = time.time()
     test_time = end-start
     print('[DALI-GPU] end test dataloader iteration')
-    # print('[DALI] iteration time: %fs [train],  %fs [test]' % (train_time, test_time))
     print('[DALI-GPU] iteration time: %fs [test]' % (test_time))
 
 
     print('[DALI-cpu] start iterate train dataloader')
     start = time.time()
     for i, data in enumerate(val_loader):
+        if i%5==0:
+            print(i,end='-')
         images = data[0]['data'].cuda()
         labels = data[0]['label'].cuda()
     end = time.time()
     test_time = end-start
     print('[DALI-cpu] end test dataloader iteration')
-    # print('[DALI] iteration time: %fs [train],  %fs [test]' % (train_time, test_time))
     print('[DALI-cpu] iteration time: %fs [test]' % (test_time))
 
 
@@ -103,6 +105,8 @@ if __name__ == '__main__':
     print('[PyTorch] start iterate test dataloader')
     start = time.time()
     for i, (x,y) in enumerate(train_loader):
+        if i%5==0:
+            print(i,end='-')
         images = x.cuda(non_blocking=True)
         labels = y.cuda(non_blocking=True)
     end = time.time()
