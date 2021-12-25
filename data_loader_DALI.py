@@ -63,26 +63,38 @@ def create_dali_pipeline(data_dir, crop, size, shard_id, num_shards, dali_cpu=Fa
 
 if __name__ == '__main__':
 
-    pipe_train = create_dali_pipeline(batch_size=2048, num_threads=8, device_id=0, seed=12, data_dir=IMG_DIR,
+    pipe = create_dali_pipeline(batch_size=2048, num_threads=8, device_id=0, seed=12, data_dir=IMG_DIR,
                                 crop=224, size=50000, dali_cpu=False, shard_id=0, num_shards=1, is_training=True)
-    pipe_val = create_dali_pipeline(batch_size=2000, num_threads=8, device_id=0, seed=12, data_dir=IMG_DIR,
-                                crop=256, size=50000, dali_cpu=True, shard_id=0, num_shards=1, is_training=False)
-    pipe_train.build()
-    pipe_val.build()
-    train_loader = DALIClassificationIterator(pipe_train, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
-    val_loader = DALIClassificationIterator(pipe_val, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
+    pipe.build()
+    train_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
 
-    print('[DALI] start iterate train dataloader')
+    pipe = create_dali_pipeline(batch_size=2000, num_threads=8, device_id=0, seed=12, data_dir=IMG_DIR,
+                                crop=256, size=50000, dali_cpu=True, shard_id=0, num_shards=1, is_training=False)
+    pipe.build()
+    val_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
+
+    print('[DALI-GPU] start iterate train dataloader')
     start = time.time()
     for i, (x,y) in enumerate(train_loader):
         images = x.cuda()
         labels = y.cuda()
     end = time.time()
     test_time = end-start
-    print('[DALI] end test dataloader iteration')
+    print('[DALI-GPU] end test dataloader iteration')
     # print('[DALI] iteration time: %fs [train],  %fs [test]' % (train_time, test_time))
-    print('[DALI] iteration time: %fs [test]' % (test_time))
+    print('[DALI-GPU] iteration time: %fs [test]' % (test_time))
 
+
+    print('[DALI-cpu] start iterate train dataloader')
+    start = time.time()
+    for i, (x,y) in enumerate(val_loader):
+        images = x.cuda()
+        labels = y.cuda()
+    end = time.time()
+    test_time = end-start
+    print('[DALI-cpu] end test dataloader iteration')
+    # print('[DALI] iteration time: %fs [train],  %fs [test]' % (train_time, test_time))
+    print('[DALI-cpu] iteration time: %fs [test]' % (test_time))
 
     # iteration of PyTorch dataloader
     transform_train = transforms.Compose([
