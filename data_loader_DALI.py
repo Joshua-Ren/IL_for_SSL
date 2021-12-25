@@ -25,7 +25,7 @@ IMG_DIR = '/home/sg955/rds/hpc-work/ImageNet/val'
 @pipeline_def
 def create_dali_pipeline(data_dir, crop, size, shard_id, num_shards, dali_cpu=False, is_training=True):
     images, labels = fn.readers.file(file_root=data_dir, shard_id=shard_id, num_shards=num_shards,
-                                     random_shuffle=is_training, pad_last_batch=True, initial_fill=5000)
+                                     random_shuffle=is_training, pad_last_batch=True, initial_fill=1000)
     dali_device = 'cpu' if dali_cpu else 'gpu'
     decoder_device = 'cpu' if dali_cpu else 'mixed'
     if is_training:
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     # print('[DALI] iteration time: %fs [train],  %fs [test]' % (train_time, test_time))
     print('[DALI-GPU] iteration time: %fs [test]' % (test_time))
 
-
+'''
     print('[DALI-cpu] start iterate train dataloader')
     start = time.time()
     for i, (x,y) in enumerate(val_loader):
@@ -80,6 +80,7 @@ if __name__ == '__main__':
     print('[DALI-cpu] end test dataloader iteration')
     # print('[DALI] iteration time: %fs [train],  %fs [test]' % (train_time, test_time))
     print('[DALI-cpu] iteration time: %fs [test]' % (test_time))
+'''
 
     # iteration of PyTorch dataloader
     transform_train = transforms.Compose([
