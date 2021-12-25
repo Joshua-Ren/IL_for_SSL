@@ -32,7 +32,7 @@ from my_MAE import my_MAE
 from einops import rearrange, repeat
 from data_loader import ZipImageNetFolder
 from data_loader_DALI import *
-import amp
+from apex import amp
 
 K_CLAS = 1000
 
