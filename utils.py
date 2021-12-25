@@ -41,11 +41,12 @@ def wandb_gen_track_x(train_loader,val_loader):
     for i,data in enumerate(train_loader):
         x = data[0]['data']
         break
-    track_tx = x[:WANDB_track_figs]
+    track_tx = x[:WANDB_track_figs].as_array()
+    print(track_tx.shape)
     for i,data in enumerate(val_loader):
         x = data[0]['data']
         break
-    track_vx = x[:WANDB_track_figs]
+    track_vx = x[:WANDB_track_figs].as_array()
     return torch.cat((track_tx,track_vx),0)
 
 def wandb_init(proj_name='test', run_name=None, config_args=None):
