@@ -69,7 +69,7 @@ if __name__ == '__main__':
     # print('[DALI] iteration time: %fs [train],  %fs [test]' % (train_time, test_time))
     print('[DALI-GPU] iteration time: %fs [test]' % (test_time))
 
-'''
+
     print('[DALI-cpu] start iterate train dataloader')
     start = time.time()
     for i, (x,y) in enumerate(val_loader):
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     print('[DALI-cpu] end test dataloader iteration')
     # print('[DALI] iteration time: %fs [train],  %fs [test]' % (train_time, test_time))
     print('[DALI-cpu] iteration time: %fs [test]' % (test_time))
-'''
+
 
     # iteration of PyTorch dataloader
     transform_train = transforms.Compose([
