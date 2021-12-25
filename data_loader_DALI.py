@@ -25,22 +25,17 @@ IMG_DIR = '/home/sg955/rds/hpc-work/ImageNet/val'
 @pipeline_def
 def create_dali_pipeline(data_dir, crop, size, shard_id, num_shards, dali_cpu=False, is_training=True):
     images, labels = fn.readers.file(file_root=data_dir, shard_id=shard_id, num_shards=num_shards,
-                                     random_shuffle=is_training, pad_last_batch=True, name="Reader")
+                                     random_shuffle=is_training, pad_last_batch=True, initial_fill=5000)
     dali_device = 'cpu' if dali_cpu else 'gpu'
     decoder_device = 'cpu' if dali_cpu else 'mixed'
     if is_training:
-        images = fn.decoders.image_random_crop(images,
-                                               device=decoder_device, output_type=types.RGB,
-                                               random_aspect_ratio=[0.8, 1.25],
-                                               random_area=[0.1, 1.0],
-                                               num_attempts=100)
-        images = fn.resize(images, device=dali_device, resize_x=crop,
-                           resize_y=crop, interp_type=types.INTERP_TRIANGULAR)
+        images = fn.decoders.image_random_crop(images, device='mixed', output_type=types.RGB, random_aspect_ratio=[0.8, 1.25], 
+                                                random_area=[0.1, 1.0], num_attempts=100)
+        images = fn.resize(images, device='gpu', resize_x=crop, resize_y=crop, interp_type=types.INTERP_TRIANGULAR)
         mirror = fn.random.coin_flip(probability=0.5)
     else:
-        images = fn.decoders.image(images, device=decoder_device, output_type=types.RGB)
-        images = fn.resize(images, device=dali_device, size=size,
-                           mode="not_smaller", interp_type=types.INTERP_TRIANGULAR)
+        images = fn.decoders.image(images, device='mixed', output_type=types.RGB)
+        images = fn.resize(images, device='gpu', size=size, mode="not_smaller", interp_type=types.INTERP_TRIANGULAR)
         mirror = False
 
     images = fn.crop_mirror_normalize(images.gpu(), dtype=types.FLOAT, output_layout="CHW",
@@ -54,12 +49,12 @@ def create_dali_pipeline(data_dir, crop, size, shard_id, num_shards, dali_cpu=Fa
 if __name__ == '__main__':
 
     pipe = create_dali_pipeline(batch_size=2048, num_threads=8, device_id=0, seed=12, data_dir=IMG_DIR,
-                                crop=224, size=50000, dali_cpu=False, shard_id=0, num_shards=1, is_training=True)
+                                crop=224, size=256, dali_cpu=False, shard_id=0, num_shards=1, is_training=True)
     pipe.build()
     train_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
 
     pipe = create_dali_pipeline(batch_size=2000, num_threads=8, device_id=0, seed=12, data_dir=IMG_DIR,
-                                crop=256, size=50000, dali_cpu=False, shard_id=0, num_shards=1, is_training=False)
+                                crop=256, size=256, dali_cpu=False, shard_id=0, num_shards=1, is_training=False)
     pipe.build()
     val_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
 
