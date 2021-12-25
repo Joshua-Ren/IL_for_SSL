@@ -61,8 +61,8 @@ if __name__ == '__main__':
     print('[DALI-GPU] start iterate train dataloader')
     start = time.time()
     for i, data in enumerate(train_loader):
-        images = data[0].cuda()
-        labels = data[1].cuda()
+        images = data[0]['data'].cuda()
+        labels = data[0]['label'].cuda()
     end = time.time()
     test_time = end-start
     print('[DALI-GPU] end test dataloader iteration')
@@ -73,8 +73,8 @@ if __name__ == '__main__':
     print('[DALI-cpu] start iterate train dataloader')
     start = time.time()
     for i, data in enumerate(val_loader):
-        images = data[0].cuda()
-        labels = data[1].cuda()
+        images = data[0]['data'].cuda()
+        labels = data[0]['label'].cuda()
     end = time.time()
     test_time = end-start
     print('[DALI-cpu] end test dataloader iteration')
