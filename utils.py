@@ -38,10 +38,12 @@ def checkpoint_save_pretrain(encoder, g, save_path):
 
 # ================== Functions about wandb ===================================
 def wandb_gen_track_x(train_loader,val_loader):
-    for x,y in train_loader:
+    for i,data in enumerate(train_loader):
+        x = data[0]['data']
         break
     track_tx = x[:WANDB_track_figs]
-    for x,y in val_loader:
+    for i,data in enumerate(val_loader):
+        x = data[0]['data']
         break
     track_vx = x[:WANDB_track_figs]
     return torch.cat((track_tx,track_vx),0)
