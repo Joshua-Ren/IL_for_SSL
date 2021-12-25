@@ -1,101 +1,82 @@
 import os
-import sys
 import time
+import math
 import torch
-import pickle
-import numpy as np
-import nvidia.dali.ops as ops
-from base import DALIDataloader
-from torchvision import datasets
-from sklearn.utils import shuffle
-import nvidia.dali.types as types
-from nvidia.dali.pipeline import Pipeline
+import torch.nn as nn
+import torch.nn.parallel
+import torch.backends.cudnn as cudnn
+import torch.distributed as dist
+import torch.optim
+import torch.utils.data
+import torch.utils.data.distributed
 import torchvision.transforms as transforms
+import torchvision.datasets as datasets
+import torchvision.models as models
+import numpy as np
+from nvidia.dali.plugin.pytorch import DALIClassificationIterator, LastBatchPolicy
+from nvidia.dali.pipeline import pipeline_def
+import nvidia.dali.types as types
+import nvidia.dali.fn as fn
 import warnings
 warnings.filterwarnings('ignore')
 
-IMAGENET_MEAN = [0.49139968, 0.48215827, 0.44653124]
-IMAGENET_STD = [0.24703233, 0.24348505, 0.26158768]
-IMAGENET_IMAGES_NUM_TRAIN = 50000#1281167
-IMAGENET_IMAGES_NUM_TEST = 50000
-IMG_DIR = '/home/sg955/rds/hpc-work/ImageNet/'
-TRAIN_BS = 2048
-TEST_BS = 200
-NUM_WORKERS = 8
-VAL_SIZE = 256
-CROP_SIZE = 224
+IMG_DIR = '/home/sg955/rds/hpc-work/ImageNet/val'
 
-class HybridTrainPipe(Pipeline):
-    def __init__(self, batch_size, num_threads, device_id, data_dir, crop, dali_cpu=False, local_rank=0, world_size=1):
-        super(HybridTrainPipe, self).__init__(batch_size, num_threads, device_id, seed=12 + device_id)
-        dali_device = "gpu"
-        self.input = ops.FileReader(file_root=data_dir, shard_id=local_rank, num_shards=world_size, random_shuffle=True)
-        self.decode = ops.ImageDecoder(device="mixed", output_type=types.RGB)
-        self.res = ops.RandomResizedCrop(device="gpu", size=crop, random_area=[0.08, 1.25])
-        self.cmnp = ops.CropMirrorNormalize(device="gpu",
-                                            output_dtype=types.FLOAT,
-                                            output_layout=types.NCHW,
-                                            image_type=types.RGB,
-                                            mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
-                                            std=[0.229 * 255, 0.224 * 255, 0.225 * 255])
-        self.coin = ops.CoinFlip(probability=0.5)
-        print('DALI "{0}" variant'.format(dali_device))
+@pipeline_def
+def create_dali_pipeline(data_dir, crop, size, shard_id, num_shards, dali_cpu=False, is_training=True):
+    images, labels = fn.readers.file(file_root=data_dir, shard_id=shard_id, num_shards=num_shards,
+                                     random_shuffle=is_training, pad_last_batch=True, name="Reader")
+    dali_device = 'cpu' if dali_cpu else 'gpu'
+    decoder_device = 'cpu' if dali_cpu else 'mixed'
+    # ask nvJPEG to preallocate memory for the biggest sample in ImageNet for CPU and GPU to avoid reallocations in runtime
+    device_memory_padding = 211025920 if decoder_device == 'mixed' else 0
+    host_memory_padding = 140544512 if decoder_device == 'mixed' else 0
+    # ask HW NVJPEG to allocate memory ahead for the biggest image in the data set to avoid reallocations in runtime
+    preallocate_width_hint = 5980 if decoder_device == 'mixed' else 0
+    preallocate_height_hint = 6430 if decoder_device == 'mixed' else 0
+    if is_training:
+        images = fn.decoders.image_random_crop(images,
+                                               device=decoder_device, output_type=types.RGB,
+                                               device_memory_padding=device_memory_padding,
+                                               host_memory_padding=host_memory_padding,
+                                               preallocate_width_hint=preallocate_width_hint,
+                                               preallocate_height_hint=preallocate_height_hint,
+                                               random_aspect_ratio=[0.8, 1.25],
+                                               random_area=[0.1, 1.0],
+                                               num_attempts=100)
+        images = fn.resize(images, device=dali_device, resize_x=crop,
+                           resize_y=crop, interp_type=types.INTERP_TRIANGULAR)
+        mirror = fn.random.coin_flip(probability=0.5)
+    else:
+        images = fn.decoders.image(images, device=decoder_device, output_type=types.RGB)
+        images = fn.resize(images, device=dali_device, size=size,
+                           mode="not_smaller", interp_type=types.INTERP_TRIANGULAR)
+        mirror = False
 
-    def define_graph(self):
-        rng = self.coin()
-        self.jpegs, self.labels = self.input(name="Reader")
-        images = self.decode(self.jpegs)
-        images = self.res(images)
-        output = self.cmnp(images, mirror=rng)
-        return [output, self.labels]
+    images = fn.crop_mirror_normalize(images.gpu(), dtype=types.FLOAT, output_layout="CHW",
+                                      crop=(crop, crop),mean=[0.485 * 255,0.456 * 255,0.406 * 255],
+                                      std=[0.229 * 255,0.224 * 255,0.225 * 255], mirror=mirror)
+    labels = labels.gpu()
+    return images, labels
 
-
-class HybridValPipe(Pipeline):
-    def __init__(self, batch_size, num_threads, device_id, data_dir, crop, size, local_rank=0, world_size=1):
-        super(HybridValPipe, self).__init__(batch_size, num_threads, device_id, seed=12 + device_id)
-        self.input = ops.FileReader(file_root=data_dir, shard_id=local_rank, num_shards=world_size,
-                                    random_shuffle=False)
-        self.decode = ops.ImageDecoder(device="mixed", output_type=types.RGB)
-        self.res = ops.Resize(device="gpu", resize_shorter=size, interp_type=types.INTERP_TRIANGULAR)
-        self.cmnp = ops.CropMirrorNormalize(device="gpu",
-                                            output_dtype=types.FLOAT,
-                                            output_layout=types.NCHW,
-                                            crop=(crop, crop),
-                                            image_type=types.RGB,
-                                            mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
-                                            std=[0.229 * 255, 0.224 * 255, 0.225 * 255])
-
-    def define_graph(self):
-        self.jpegs, self.labels = self.input(name="Reader")
-        images = self.decode(self.jpegs)
-        images = self.res(images)
-        output = self.cmnp(images)
-        return [output, self.labels]
 
 
 if __name__ == '__main__':
-    # iteration of DALI dataloader
-    pip_train = HybridTrainPipe(batch_size=TRAIN_BS, num_threads=NUM_WORKERS, device_id=0, data_dir=IMG_DIR+'/val', crop=CROP_SIZE, world_size=1, local_rank=0)
-    pip_test = HybridValPipe(batch_size=TEST_BS, num_threads=NUM_WORKERS, device_id=0, data_dir=IMG_DIR+'/val', crop=CROP_SIZE, size=VAL_SIZE, world_size=1, local_rank=0)
-    train_loader = DALIDataloader(pipeline=pip_train, nsize=50000, batch_size=TRAIN_BS, onehot_label=False)
-    test_loader = DALIDataloader(pipeline=pip_test, nsize=50000, batch_size=TEST_BS, onehot_label=False)
-    # print("[DALI] train dataloader length: %d"%len(train_loader))
-    # print('[DALI] start iterate train dataloader')
-    # start = time.time()
-    # for i, data in enumerate(train_loader):
-    #     images = data[0].cuda(non_blocking=True)
-    #     labels = data[1].cuda(non_blocking=True)
-    # end = time.time()
-    # train_time = end-start
-    # print('[DALI] end train dataloader iteration')
 
-    print("[DALI] test dataloader length: %d"%len(test_loader))
-    print('[DALI] start iterate test dataloader')
+    pipe_train = create_dali_pipeline(batch_size=2048, num_threads=8, device_id=0, seed=12, data_dir=IMG_DIR,
+                                crop=224, size=50000, dali_cpu=False, shard_id=0, num_shards=1, is_training=True)
+    pipe_val = create_dali_pipeline(batch_size=2000, num_threads=8, device_id=0, seed=12, data_dir=IMG_DIR,
+                                crop=256, ize=50000, dali_cpu=True, shard_id=0, num_shards=1, is_training=False)
+    pipe_train.build()
+    pipe_val.build()
+    train_loader = DALIClassificationIterator(pipe_train, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
+    val_loader = DALIClassificationIterator(pipe_val, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
+
+    print('[DALI] start iterate train dataloader')
     start = time.time()
-    for i, data in enumerate(test_loader):
-        print(data[0])
-        images = data[0].cuda(non_blocking=True)
-        labels = data[1].cuda(non_blocking=True)
+    for i, (x,y) in enumerate(train_loader):
+        images = x.cuda()
+        labels = y.cuda()
     end = time.time()
     test_time = end-start
     print('[DALI] end test dataloader iteration')
@@ -105,37 +86,27 @@ if __name__ == '__main__':
 
     # iteration of PyTorch dataloader
     transform_train = transforms.Compose([
-        transforms.RandomResizedCrop(CROP_SIZE, scale=(0.08, 1.25)),
+        transforms.RandomResizedCrop(224, scale=(0.08, 1.25)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
-    train_dst = datasets.ImageFolder(IMG_DIR+'/train', transform_train)
-    train_loader = torch.utils.data.DataLoader(train_dst, batch_size=TRAIN_BS, shuffle=True, pin_memory=True, num_workers=NUM_WORKERS)
-    transform_test = transforms.Compose([
-        transforms.Resize(VAL_SIZE),
-        transforms.CenterCrop(CROP_SIZE),
+    train_dst = datasets.ImageFolder(IMG_DIR, transform_train)
+    train_loader = torch.utils.data.DataLoader(train_dst, batch_size=2048, shuffle=True, pin_memory=True, num_workers=8)
+    transform_val = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
-    test_dst = datasets.ImageFolder(IMG_DIR+'/val', transform_test)
-    test_iter = torch.utils.data.DataLoader(test_dst, batch_size=TEST_BS, shuffle=False, pin_memory=True, num_workers=NUM_WORKERS)
-    # print("[PyTorch] train dataloader length: %d"%len(train_loader))
-    # print('[PyTorch] start iterate train dataloader')
-    # start = time.time()
-    # for i, data in enumerate(train_loader):
-    #     images = data[0].cuda(non_blocking=True)
-    #     labels = data[1].cuda(non_blocking=True)
-    # end = time.time()
-    # train_time = end-start
-    # print('[PyTorch] end train dataloader iteration')
+    val_dst = datasets.ImageFolder(IMG_DIR, transform_val)
+    val_loader = torch.utils.data.DataLoader(val_dst, batch_size=2000, shuffle=False, pin_memory=True, num_workers=8)
 
-    print("[PyTorch] test dataloader length: %d"%len(test_loader))
     print('[PyTorch] start iterate test dataloader')
     start = time.time()
-    for i, data in enumerate(test_loader):
-        images = data[0].cuda(non_blocking=True)
-        labels = data[1].cuda(non_blocking=True)
+    for i, (x,y) in enumerate(train_loader):
+        images = x.cuda(non_blocking=True)
+        labels = y.cuda(non_blocking=True)
     end = time.time()
     test_time = end-start
     print('[PyTorch] end test dataloader iteration')
