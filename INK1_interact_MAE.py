@@ -33,6 +33,7 @@ from vit_pytorch import ViT
 from my_MAE import my_MAE
 from einops import rearrange, repeat
 from data_loader import ZipImageNetFolder
+from data_loader_DALI import *
 
 K_CLAS = 100
 
@@ -61,27 +62,17 @@ if not os.path.exists(save_path):
 DATA_PATH = '/home/sg955/rds/hpc-work/ImageNet/'
 traindir = os.path.join(DATA_PATH, 'val')
 valdir = os.path.join(DATA_PATH, 'val')
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 
-train_dataset = torchvision.datasets.ImageFolder(
-    traindir,
-    transforms.Compose([
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        normalize,
-    ]))
+pipe = create_dali_pipeline(batch_size=args.batch_size, num_threads=8, device_id=0, seed=12, data_dir=traindir,
+                            crop=224, size=256, dali_cpu=False, shard_id=0, num_shards=1, is_training=True)
+pipe.build()
+train_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
 
-val_dataset = torchvision.datasets.ImageFolder(
-    valdir,
-    transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        normalize,
-    ]))
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=16, pin_memory=True)
-val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=True)
+pipe = create_dali_pipeline(batch_size=2000, num_threads=8, device_id=0, seed=12, data_dir=traindir,
+                            crop=256, size=256, dali_cpu=True, shard_id=0, num_shards=1, is_training=False)
+pipe.build()
+val_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
+
 TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
 TRACK_TVX = TRACK_TVX.to(device)
 

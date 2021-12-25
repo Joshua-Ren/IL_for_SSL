@@ -45,7 +45,6 @@ def create_dali_pipeline(data_dir, crop, size, shard_id, num_shards, dali_cpu=Fa
     return images, labels
 
 
-
 if __name__ == '__main__':
 
     # iteration of PyTorch dataloader
@@ -69,7 +68,7 @@ if __name__ == '__main__':
     print('[PyTorch] start iterate test dataloader')
     start = time.time()
     for i, (x,y) in enumerate(train_loader):
-        if i%50==0:
+        if i%5==0:
             print(i,end='-')
         images = x.cuda(non_blocking=True)
         labels = y.cuda(non_blocking=True)
@@ -93,7 +92,7 @@ if __name__ == '__main__':
     print('[DALI-GPU] start iterate train dataloader')
     start = time.time()
     for i, data in enumerate(train_loader):
-        if i%50==0:
+        if i%5==0:
             print(i,end='-')
         images = data[0]['data'].cuda()
         labels = data[0]['label'].cuda()
@@ -102,13 +101,13 @@ if __name__ == '__main__':
     print('[DALI-GPU] iteration time: %fs [test]' % (test_time))
 
 
-    print('[DALI-GPU] start iterate val dataloader')
+    print('[DALI-cpu] start iterate val dataloader')
     start = time.time()
     for i, data in enumerate(val_loader):
-        if i%50==0:
+        if i%5==0:
             print(i,end='-')
         images = data[0]['data'].cuda()
         labels = data[0]['label'].cuda()
     end = time.time()
     test_time = end-start
-    print('[DALI-GPU] iteration time: %fs [test]' % (test_time))
+    print('[DALI-cpu] iteration time: %fs [test]' % (test_time))
