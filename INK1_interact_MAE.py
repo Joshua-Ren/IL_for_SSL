@@ -98,9 +98,9 @@ def _recon_validate(mae,table_key='initial'):
 
 # ---------- Train the model
 for g in range(args.epochs):
-    for i, (x, _) in enumerate(train_loader):
+    for i, data in enumerate(train_loader):
+        x = data[0]['data']
         optimizer.zero_grad()
-        x = x.to(device)
         loss,_ = mae(x)
         loss.backward()
         optimizer.step() 
