@@ -49,6 +49,15 @@ def wandb_gen_track_x(train_loader,val_loader):
     track_vx = x[:WANDB_track_figs]
     return torch.cat((track_tx,track_vx),0)
 
+def wandb_gen_track_x_old(train_loader,val_loader):
+    for x,y in train_loader:
+        break
+    track_tx = x[:WANDB_track_figs]
+    for x,y in val_loader:
+        break
+    track_vx = x[:WANDB_track_figs]
+    return torch.cat((track_tx,track_vx),0)
+
 def wandb_init(proj_name='test', run_name=None, config_args=None):
     wandb.init(
         project=proj_name,
