@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Dec 18 21:44:23 2021
-
 @author: YIREN
 """
 
 # -*- coding: utf-8 -*-
 """
 Created on Sat Dec 18 17:55:08 2021
-
 @author: YIREN
 """
 import warnings
@@ -34,6 +32,7 @@ from my_MAE import my_MAE
 from einops import rearrange, repeat
 from data_loader import ZipImageNetFolder
 from data_loader_DALI import *
+import amp
 
 K_CLAS = 1000
 
@@ -46,6 +45,7 @@ parser.add_argument('--proj_path',default='INK1_Interact_MAE', type=str)
 parser.add_argument('--epochs',default=1000, type=int)
 parser.add_argument('--mask_ratio',default=0.5,type=float)
 parser.add_argument('--run_name',default=None,type=str)
+parser.add_argument('--enable_amp',action='store_true')
 
 args = parser.parse_args()
 rnd_seed(args.seed)
@@ -83,6 +83,9 @@ encoder = ViT(image_size = 224, patch_size = 16, num_classes = 1000,
 mae = my_MAE(encoder=encoder, masking_ratio = 0.75, decoder_dim = 512, decoder_depth=1).to(device)
 optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
+        # --- Add amp
+if args.enable_amp:
+    mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
 
 # ---------- Record experimental parameters
 def _recon_validate(mae,table_key='initial'):
@@ -102,7 +105,11 @@ for g in range(args.epochs):
         x = data[0]['data']
         optimizer.zero_grad()
         loss,_ = mae(x)
-        loss.backward()
+        if args.enable_amp:
+            with amp.scale_loss(loss, optimizer) as scaled_loss:
+                scaled_loss.backward() 
+        else:
+            loss.backward()
         optimizer.step() 
         wandb.log({'loss':loss.item()})
     train_loader.reset()
@@ -111,22 +118,3 @@ for g in range(args.epochs):
         _recon_validate(mae,table_key='epoch_'+str(g))
         #checkpoint_save_interact(mae, g, save_path)
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
