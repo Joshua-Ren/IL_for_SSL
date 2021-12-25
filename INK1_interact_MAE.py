@@ -43,7 +43,7 @@ parser.add_argument('--resume', '-r', action='store_true', help='resume from che
 parser.add_argument('--batch_size',default=2048, type=int)
 parser.add_argument('--seed',default=10086,type=int)
 parser.add_argument('--proj_path',default='INK1_Interact_MAE', type=str)
-parser.add_argument('--epochs',default=100, type=int)
+parser.add_argument('--epochs',default=1000, type=int)
 parser.add_argument('--mask_ratio',default=0.5,type=float)
 parser.add_argument('--run_name',default=None,type=str)
 
@@ -108,7 +108,7 @@ for g in range(args.epochs):
     _recon_validate(mae,table_key='latest')
     if g%50 == 0:
         _recon_validate(mae,table_key='epoch_'+str(g))
-        checkpoint_save_interact(mae, g, save_path)
+        #checkpoint_save_interact(mae, g, save_path)
     
 
 
