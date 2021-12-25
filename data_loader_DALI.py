@@ -66,7 +66,7 @@ if __name__ == '__main__':
     pipe_train = create_dali_pipeline(batch_size=2048, num_threads=8, device_id=0, seed=12, data_dir=IMG_DIR,
                                 crop=224, size=50000, dali_cpu=False, shard_id=0, num_shards=1, is_training=True)
     pipe_val = create_dali_pipeline(batch_size=2000, num_threads=8, device_id=0, seed=12, data_dir=IMG_DIR,
-                                crop=256, ize=50000, dali_cpu=True, shard_id=0, num_shards=1, is_training=False)
+                                crop=256, size=50000, dali_cpu=True, shard_id=0, num_shards=1, is_training=False)
     pipe_train.build()
     pipe_val.build()
     train_loader = DALIClassificationIterator(pipe_train, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
