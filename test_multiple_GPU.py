@@ -1,6 +1,7 @@
 import torch
 import argparse
 import os
+from utils import *
 from apex import amp
 # FOR DISTRIBUTED: (can also use torch.nn.parallel.DistributedDataParallel instead)
 from apex.parallel import DistributedDataParallel
@@ -9,7 +10,18 @@ parser = argparse.ArgumentParser()
 # FOR DISTRIBUTED:  Parse for the local_rank argument, which will be supplied
 # automatically by torch.distributed.launch.
 parser.add_argument("--local_rank", default=0, type=int)
+parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
+parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
+parser.add_argument('--batch_size',default=1024, type=int)
+parser.add_argument('--seed',default=10086,type=int)
+parser.add_argument('--proj_path',default='INK1_Interact_MAE', type=str)
+parser.add_argument('--epochs',default=1000, type=int)
+parser.add_argument('--mask_ratio',default=0.5,type=float)
+parser.add_argument('--run_name',default=None,type=str)
+parser.add_argument('--enable_amp',action='store_true')
+parser.add_argument("--local_rank", default=0, type=int)
 args = parser.parse_args()
+wandb_init(proj_name='INK1_Interact_MAE', run_name='test_multipleGPU', config_args=args)
 
 # FOR DISTRIBUTED:  If we are running under torch.distributed.launch,
 # the 'WORLD_SIZE' environment variable will also be set automatically.
@@ -53,13 +65,14 @@ if args.distributed:
 
 loss_fn = torch.nn.MSELoss()
 
-for t in range(500):
+for t in range(5000):
     optimizer.zero_grad()
     y_pred = model(x)
     loss = loss_fn(y_pred, y)
     with amp.scale_loss(loss, optimizer) as scaled_loss:
         scaled_loss.backward()
     optimizer.step()
-
+    if args.local_rank==0:
+        wandb.log({'loss':loss.item()})
 if args.local_rank == 0:
     print("final loss = ", loss)
