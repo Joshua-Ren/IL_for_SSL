@@ -19,7 +19,6 @@ parser.add_argument('--epochs',default=1000, type=int)
 parser.add_argument('--mask_ratio',default=0.5,type=float)
 parser.add_argument('--run_name',default=None,type=str)
 parser.add_argument('--enable_amp',action='store_true')
-parser.add_argument("--local_rank", default=0, type=int)
 args = parser.parse_args()
 wandb_init(proj_name='INK1_Interact_MAE', run_name='test_multipleGPU', config_args=args)
 
