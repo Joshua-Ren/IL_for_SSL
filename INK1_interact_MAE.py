@@ -68,6 +68,7 @@ args.world_size=1
 args.distributed = False
 if 'WORLD_SIZE' in os.environ:
     args.distributed = int(os.environ['WORLD_SIZE']) > 1
+    print(args.distributed)
 if args.distributed:
     # FOR DISTRIBUTED:  Set the device according to local_rank.
     torch.cuda.set_device(args.local_rank)
