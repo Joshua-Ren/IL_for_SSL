@@ -67,7 +67,7 @@ if args.distributed:
 
 loss_fn = torch.nn.MSELoss()
 
-for t in range(500000):
+for t in range(50000):
     optimizer.zero_grad()
     y_pred = model(x)
     loss = loss_fn(y_pred, y)
