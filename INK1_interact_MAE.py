@@ -54,14 +54,6 @@ args = parser.parse_args()
 rnd_seed(args.seed)
 #device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# ====================== Interaction phase: MAE ===============================
-# ---------- Prepare the model, optimizer, scheduler
-encoder = ViT(image_size = 224, patch_size = 16, num_classes = 1000,
-              dim = 1024, depth = 6, heads = 8, mlp_dim = 2048)
-mae = my_MAE(encoder=encoder, masking_ratio = 0.75, decoder_dim = 512, decoder_depth=1).cuda()
-optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05)
-scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
-
 # ============= Amp and Distributed Settings ===========================
 args.world_size=1
 args.distributed = False
@@ -73,6 +65,15 @@ if args.distributed:
     torch.distributed.init_process_group(backend='nccl',init_method='env://')
     args.world_size = torch.distributed.get_world_size()
 torch.backends.cudnn.benchmark = True
+
+# ====================== Interaction phase: MAE ===============================
+# ---------- Prepare the model, optimizer, scheduler
+encoder = ViT(image_size = 224, patch_size = 16, num_classes = 1000,
+              dim = 1024, depth = 6, heads = 8, mlp_dim = 2048)
+mae = my_MAE(encoder=encoder, masking_ratio = 0.75, decoder_dim = 512, decoder_depth=1).cuda()
+optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
+
 if args.enable_amp:
     mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
 if args.distributed:
