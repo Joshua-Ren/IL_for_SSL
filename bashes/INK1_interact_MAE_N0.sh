@@ -1,5 +1,3 @@
-export NCCL_P2P_DISABLE=1
-export NCCL_IB_DISABLE=1
 #!/bin/bash
 #SBATCH -A NLP-CDT-SL2-GPU
 #SBATCH -p ampere
@@ -8,7 +6,8 @@ export NCCL_IB_DISABLE=1
 #SBATCH --output=./logs/test.txt
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
-
+export NCCL_P2P_DISABLE=1
+export NCCL_IB_DISABLE=1
 . /etc/profile.d/modules.sh
 module purge
 module load rhel8/default-amp

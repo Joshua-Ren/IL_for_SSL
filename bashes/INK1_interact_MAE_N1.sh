@@ -1,5 +1,3 @@
-export NCCL_P2P_DISABLE=1
-export NCCL_IB_DISABLE=1
 #!/bin/bash
 #SBATCH -A NLP-CDT-SL2-GPU
 #SBATCH -p ampere
