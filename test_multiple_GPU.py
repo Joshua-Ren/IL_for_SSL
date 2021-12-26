@@ -40,7 +40,7 @@ if args.distributed:
 torch.backends.cudnn.benchmark = True
 
 if args.local_rank==0:
-    wandb_init(proj_name='INK1_Interact_MAE', run_name='test_multipleGPU', config_args=args)
+    wandb_init(proj_name='INK1_Interact_MAE', run_name=args.run_name, config_args=args)
 
 N, D_in, D_out = 64, 1024, 16
 
