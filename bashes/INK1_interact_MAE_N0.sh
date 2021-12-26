@@ -1,3 +1,5 @@
+export NCCL_P2P_DISABLE=1
+export NCCL_IB_DISABLE=1
 #!/bin/bash
 #SBATCH -A NLP-CDT-SL2-GPU
 #SBATCH -p ampere
@@ -16,4 +18,4 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python INK1_interact_MAE.py --run_name DALI_AMP --enable_amp
+srun python INK1_interact_MAE.py --run_name DALI_1GPU --enable_amp

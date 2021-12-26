@@ -1,3 +1,5 @@
+export NCCL_P2P_DISABLE=1
+export NCCL_IB_DISABLE=1
 #!/bin/bash
 #SBATCH -A NLP-CDT-SL2-GPU
 #SBATCH -p ampere
@@ -16,4 +18,4 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python INK1_interact_MAE.py --run_name DALI_AMP_N2 --enable_amp
+srun python -m torch.distributed.launch --nproc_per_node=8 --master_port 10086 INK1_interact_MAE.py --run_name DALI_AMP_8GPU --enable_amp
