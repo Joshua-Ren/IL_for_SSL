@@ -20,7 +20,7 @@ parser.add_argument('--mask_ratio',default=0.5,type=float)
 parser.add_argument('--run_name',default=None,type=str)
 parser.add_argument('--enable_amp',action='store_true')
 args = parser.parse_args()
-wandb_init(proj_name='INK1_Interact_MAE', run_name='test_multipleGPU', config_args=args)
+
 
 # FOR DISTRIBUTED:  If we are running under torch.distributed.launch,
 # the 'WORLD_SIZE' environment variable will also be set automatically.
@@ -39,6 +39,9 @@ if args.distributed:
 
 torch.backends.cudnn.benchmark = True
 
+if args.local_rank==0:
+    wandb_init(proj_name='INK1_Interact_MAE', run_name='test_multipleGPU', config_args=args)
+    
 N, D_in, D_out = 64, 1024, 16
 
 # Each process receives its own batch of "fake input data" and "fake target data."
