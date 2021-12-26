@@ -5,7 +5,7 @@
 #SBATCH --job-name=mae
 #SBATCH --output=./logs/test.txt
 #SBATCH --nodes=2
-#SBATCH --gres=gpu:8
+#SBATCH --gres=gpu:4
 
 . /etc/profile.d/modules.sh
 module purge
