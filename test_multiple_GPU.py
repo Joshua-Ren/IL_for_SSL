@@ -41,7 +41,7 @@ torch.backends.cudnn.benchmark = True
 
 if args.local_rank==0:
     wandb_init(proj_name='INK1_Interact_MAE', run_name='test_multipleGPU', config_args=args)
-    
+
 N, D_in, D_out = 64, 1024, 16
 
 # Each process receives its own batch of "fake input data" and "fake target data."
@@ -67,7 +67,7 @@ if args.distributed:
 
 loss_fn = torch.nn.MSELoss()
 
-for t in range(5000):
+for t in range(500000):
     optimizer.zero_grad()
     y_pred = model(x)
     loss = loss_fn(y_pred, y)
