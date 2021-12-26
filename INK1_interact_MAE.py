@@ -103,11 +103,12 @@ pipe = create_dali_pipeline(batch_size=2000, num_threads=4, device_id=args.local
 pipe.build()
 val_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
 
-TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
-TRACK_TVX = TRACK_TVX.to(device)
+if args.local_rank==0:
+    TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
+    TRACK_TVX = TRACK_TVX.to(device)
 
 # ---------- Record experimental parameters
-def _recon_validate(mae,table_key='initial'):
+def _recon_validate(TRACK_TVX, mae,table_key='initial'):
     '''
         For image reconstruction, feed TRACK_TVX to the mae model
         then show the reconstruction and original figure on W&B
@@ -135,9 +136,9 @@ for g in range(args.epochs):
     # ------ At the end of one epoch
     train_loader.reset()
     if args.local_rank==0:
-        _recon_validate(mae,table_key='latest')
+        _recon_validate(TRACK_TVX, mae,table_key='latest')
     if g%50 == 0:
         if args.local_rank==0:
-            _recon_validate(mae,table_key='epoch_'+str(g))
+            _recon_validate(TRACK_TVX, mae,table_key='epoch_'+str(g))
             #checkpoint_save_interact(mae, g, save_path)
     
