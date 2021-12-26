@@ -71,6 +71,7 @@ optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
 
 # ============= Amp and Distributed Settings ===========================
+args.world_size=1
 args.distributed = False
 if 'WORLD_SIZE' in os.environ:
     args.distributed = int(os.environ['WORLD_SIZE']) > 1
@@ -78,6 +79,7 @@ if args.distributed:
     # FOR DISTRIBUTED:  Set the device according to local_rank.
     torch.cuda.set_device(args.local_rank)
     torch.distributed.init_process_group(backend='nccl',init_method='env://')
+    args.world_size = torch.distributed.get_world_size()
 torch.backends.cudnn.benchmark = True
 if args.enable_amp:
     mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
