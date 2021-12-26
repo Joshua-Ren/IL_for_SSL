@@ -55,13 +55,6 @@ args = parser.parse_args()
 rnd_seed(args.seed)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# ======== Set results saving things ========================
-run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
-#run_name = 'add'
-save_path = './results/INK1_MAE/run_'+run_name
-if not os.path.exists(save_path):
-    os.makedirs(save_path)
-    
 # ====================== Interaction phase: MAE ===============================
 # ---------- Prepare the model, optimizer, scheduler
 encoder = ViT(image_size = 224, patch_size = 16, num_classes = 1000,
@@ -85,6 +78,15 @@ if args.enable_amp:
     mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
 if args.distributed:
     mae = DistributedDataParallel(mae)
+
+# ======== Set results saving things ========================
+if args.local_rank==0:
+    run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
+    #run_name = 'add'
+    save_path = './results/INK1_MAE/run_'+run_name
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+
 
 # ======== Get Dataloader and tracking images ===================
 DATA_PATH = '/home/sg955/rds/hpc-work/ImageNet/'
@@ -128,7 +130,8 @@ for g in range(args.epochs):
         else:
             loss.backward()
         optimizer.step() 
-        wandb.log({'loss':loss.item()})
+        if args.local_rank==0:
+            wandb.log({'loss':loss.item()})
     # ------ At the end of one epoch
     train_loader.reset()
     if args.local_rank==0:

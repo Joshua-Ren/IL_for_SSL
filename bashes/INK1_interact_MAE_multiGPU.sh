@@ -16,4 +16,4 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python INK1_interact_MAE.py --run_name DALI_AMP_MULTI --enable_amp
+srun python INK1_interact_MAE.py --run_name DALI_AMP_MULTI01 --enable_amp
