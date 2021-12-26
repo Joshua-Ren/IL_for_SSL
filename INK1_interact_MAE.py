@@ -85,6 +85,7 @@ optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
         # --- Add amp
 if args.enable_amp:
+    print('Enabling apex-amp')
     mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
 
 # ---------- Record experimental parameters
