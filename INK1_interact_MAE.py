@@ -50,7 +50,6 @@ parser.add_argument('--enable_amp',action='store_true')
 parser.add_argument("--local_rank", default=0, type=int)
 #parser.add_argument('--enable_distribute',action='store_true')
 
-
 args = parser.parse_args()
 rnd_seed(args.seed)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -79,15 +78,6 @@ if args.enable_amp:
 if args.distributed:
     mae = DistributedDataParallel(mae)
 
-# ======== Set results saving things ========================
-if args.local_rank==0:
-    run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
-    #run_name = 'add'
-    save_path = './results/INK1_MAE/run_'+run_name
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-
-
 # ======== Get Dataloader and tracking images ===================
 DATA_PATH = '/home/sg955/rds/hpc-work/ImageNet/'
 traindir = os.path.join(DATA_PATH, 'val')
@@ -104,6 +94,11 @@ pipe.build()
 val_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
 
 if args.local_rank==0:
+    run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
+    #run_name = 'add'
+    save_path = './results/INK1_MAE/run_'+run_name
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
     TRACK_TVX = TRACK_TVX.to(device)
 
@@ -135,6 +130,7 @@ for g in range(args.epochs):
             wandb.log({'loss':loss.item()})
     # ------ At the end of one epoch
     train_loader.reset()
+    '''
     if args.local_rank==0:
         _recon_validate(TRACK_TVX, mae,table_key='latest')
     if g%50 == 0:
@@ -142,3 +138,4 @@ for g in range(args.epochs):
             _recon_validate(TRACK_TVX, mae,table_key='epoch_'+str(g))
             #checkpoint_save_interact(mae, g, save_path)
     
+'''
