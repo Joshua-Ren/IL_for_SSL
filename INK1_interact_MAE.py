@@ -52,13 +52,13 @@ parser.add_argument("--local_rank", default=0, type=int)
 
 args = parser.parse_args()
 rnd_seed(args.seed)
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+#device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # ====================== Interaction phase: MAE ===============================
 # ---------- Prepare the model, optimizer, scheduler
 encoder = ViT(image_size = 224, patch_size = 16, num_classes = 1000,
               dim = 1024, depth = 6, heads = 8, mlp_dim = 2048)
-mae = my_MAE(encoder=encoder, masking_ratio = 0.75, decoder_dim = 512, decoder_depth=1).to(device)
+mae = my_MAE(encoder=encoder, masking_ratio = 0.75, decoder_dim = 512, decoder_depth=1).cuda()
 optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
 
@@ -100,7 +100,7 @@ if args.local_rank==0:
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
-    TRACK_TVX = TRACK_TVX.to(device)
+    TRACK_TVX = TRACK_TVX.cuda()
 
 # ---------- Record experimental parameters
 def _recon_validate(TRACK_TVX, mae,table_key='initial'):
