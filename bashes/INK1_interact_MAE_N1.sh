@@ -7,6 +7,9 @@
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:4
 
+export NCCL_P2P_DISABLE=1
+export NCCL_IB_DISABLE=1
+
 . /etc/profile.d/modules.sh
 module purge
 module load rhel8/default-amp
