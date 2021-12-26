@@ -4,7 +4,7 @@
 #SBATCH --time=36:00:00
 #SBATCH --job-name=mae
 #SBATCH --output=./logs/test.txt
-#SBATCH --nodes=2
+#SBATCH --nodes=1
 #SBATCH --gres=gpu:4
 
 . /etc/profile.d/modules.sh
@@ -16,4 +16,4 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python INK1_interact_MAE.py --run_name DALI_AMP_MULTI01 --enable_amp
+srun python INK1_interact_MAE.py --run_name DALI_AMP_N1 --enable_amp
