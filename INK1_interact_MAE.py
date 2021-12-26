@@ -33,6 +33,7 @@ from einops import rearrange, repeat
 from data_loader import ZipImageNetFolder
 from data_loader_DALI import *
 from apex import amp
+from apex.parallel import DistributedDataParallel
 
 K_CLAS = 1000
 
@@ -46,6 +47,9 @@ parser.add_argument('--epochs',default=1000, type=int)
 parser.add_argument('--mask_ratio',default=0.5,type=float)
 parser.add_argument('--run_name',default=None,type=str)
 parser.add_argument('--enable_amp',action='store_true')
+parser.add_argument("--local_rank", default=0, type=int)
+#parser.add_argument('--enable_distribute',action='store_true')
+
 
 args = parser.parse_args()
 rnd_seed(args.seed)
@@ -58,24 +62,6 @@ save_path = './results/INK1_MAE/run_'+run_name
 if not os.path.exists(save_path):
     os.makedirs(save_path)
     
-# ======== Get Dataloader and tracking images ===================
-DATA_PATH = '/home/sg955/rds/hpc-work/ImageNet/'
-traindir = os.path.join(DATA_PATH, 'val')
-valdir = os.path.join(DATA_PATH, 'val')
-
-pipe = create_dali_pipeline(batch_size=args.batch_size, num_threads=8, device_id=0, seed=12, data_dir=traindir,
-                            crop=224, size=256, dali_cpu=False, shard_id=0, num_shards=1, is_training=True)
-pipe.build()
-train_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
-
-pipe = create_dali_pipeline(batch_size=2000, num_threads=8, device_id=0, seed=12, data_dir=traindir,
-                            crop=224, size=224, dali_cpu=True, shard_id=0, num_shards=1, is_training=False)
-pipe.build()
-val_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
-
-TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
-TRACK_TVX = TRACK_TVX.to(device)
-
 # ====================== Interaction phase: MAE ===============================
 # ---------- Prepare the model, optimizer, scheduler
 encoder = ViT(image_size = 224, patch_size = 16, num_classes = 1000,
@@ -83,10 +69,38 @@ encoder = ViT(image_size = 224, patch_size = 16, num_classes = 1000,
 mae = my_MAE(encoder=encoder, masking_ratio = 0.75, decoder_dim = 512, decoder_depth=1).to(device)
 optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.05)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
-        # --- Add amp
+
+# ============= Amp and Distributed Settings ===========================
+args.distributed = False
+if 'WORLD_SIZE' in os.environ:
+    args.distributed = int(os.environ['WORLD_SIZE']) > 1
+if args.distributed:
+    # FOR DISTRIBUTED:  Set the device according to local_rank.
+    torch.cuda.set_device(args.local_rank)
+    torch.distributed.init_process_group(backend='nccl',init_method='env://')
+torch.backends.cudnn.benchmark = True
 if args.enable_amp:
-    print('Enabling apex-amp')
     mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
+if args.distributed:
+    mae = DistributedDataParallel(mae)
+
+# ======== Get Dataloader and tracking images ===================
+DATA_PATH = '/home/sg955/rds/hpc-work/ImageNet/'
+traindir = os.path.join(DATA_PATH, 'val')
+valdir = os.path.join(DATA_PATH, 'val')
+
+pipe = create_dali_pipeline(batch_size=args.batch_size, num_threads=4, device_id=args.local_rank, seed=12+args.local_rank, data_dir=traindir,
+                            crop=224, size=256, dali_cpu=False, shard_id=args.local_rank, num_shards=args.world_size, is_training=True)
+pipe.build()
+train_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
+
+pipe = create_dali_pipeline(batch_size=2000, num_threads=4, device_id=args.local_rank, seed=12+args.local_rank, data_dir=valdir,
+                            crop=224, size=256, dali_cpu=True, shard_id=args.local_rank, num_shards=args.world_size, is_training=False)
+pipe.build()
+val_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
+
+TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
+TRACK_TVX = TRACK_TVX.to(device)
 
 # ---------- Record experimental parameters
 def _recon_validate(mae,table_key='initial'):
@@ -113,9 +127,12 @@ for g in range(args.epochs):
             loss.backward()
         optimizer.step() 
         wandb.log({'loss':loss.item()})
+    # ------ At the end of one epoch
     train_loader.reset()
-    _recon_validate(mae,table_key='latest')
+    if args.local_rank==0:
+        _recon_validate(mae,table_key='latest')
     if g%50 == 0:
-        _recon_validate(mae,table_key='epoch_'+str(g))
-        #checkpoint_save_interact(mae, g, save_path)
+        if args.local_rank==0:
+            _recon_validate(mae,table_key='epoch_'+str(g))
+            #checkpoint_save_interact(mae, g, save_path)
     
