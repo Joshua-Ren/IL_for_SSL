@@ -42,7 +42,6 @@ def wandb_gen_track_x(train_loader,val_loader):
         x = data[0]['data']
         break
     track_tx = x[:WANDB_track_figs]
-    print(track_tx.shape)
     for i,data in enumerate(val_loader):
         x = data[0]['data']
         break
