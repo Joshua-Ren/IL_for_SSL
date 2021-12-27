@@ -187,6 +187,8 @@ def train(train_loader, mae, optimizer, g):
         optimizer.step()
         if args.local_rank==0:
             wandb.log({'loss':loss.item()})
+        if i==0:
+            torch.cuda.synchronize()
     torch.cuda.synchronize()
 
 if __name__ == '__main__':
