@@ -53,8 +53,6 @@ def parse():
     parser.add_argument('--local_rank', default=0, type=int)
     parser.add_argument('--workers',default=4, type=int)
     parser.add_argument('--record_gap',default=50, type=int)
-    parser.add_argument('--prof', default=-1, type=int,
-                        help='Only run 10 iterations for profiling.')
     #parser.add_argument('--enable_distribute',action='store_true')
     args = parser.parse_args()
     return args
@@ -181,33 +179,19 @@ def train(train_loader, mae, optimizer, g):
     for i, data in enumerate(train_loader):
         x = data[0]["data"]
         train_loader_len = int(math.ceil(train_loader._size / args.batch_size))
-        if args.prof >= 0 and i == args.prof:
-            #print("Profiling begun at iteration {}".format(i))
-            torch.cuda.cudart().cudaProfilerStart()        
-        if args.prof >= 0: torch.cuda.nvtx.range_push("Body of iteration {}".format(i))
         adjust_learning_rate(optimizer, g, i, train_loader_len)
         # compute output
-        if args.prof >= 0: torch.cuda.nvtx.range_push("forward")
         loss,_ = mae(x)
         optimizer.zero_grad()
-        if args.prof >= 0: torch.cuda.nvtx.range_push("backward")
         if args.enable_amp:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
         else:
             loss.backward()
-        if args.prof >= 0: torch.cuda.nvtx.range_pop()
-        if args.prof >= 0: torch.cuda.nvtx.range_push("optimizer.step()")
         optimizer.step()
-        if args.prof >= 0: torch.cuda.nvtx.range_pop()
         if args.local_rank==0:
             wandb.log({'loss':loss.item()})
         # Pop range "Body of iteration {}".format(i)
-        if args.prof >= 0: torch.cuda.nvtx.range_pop()
-        if args.prof >= 0 and i == args.prof + 10:
-            print("Profiling ended at iteration {}".format(i))
-            torch.cuda.cudart().cudaProfilerStop()
-            quit()
     batch_time.update((time.time() - end)/args.print_freq)
     end = time.time()
     return batch_time.avg
