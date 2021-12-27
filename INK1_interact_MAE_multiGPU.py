@@ -161,14 +161,14 @@ def main():
         train(train_loader, mae, optimizer, g)
         
         # ----- Do validation only on rank0
-        if False:#args.local_rank==0:
+        if args.local_rank==0:
             _recon_validate(TRACK_TVX, mae,table_key='latest')
             if g%args.record_gap == 0:
                 _recon_validate(TRACK_TVX, mae,table_key='epoch_'+str(g))
                 #checkpoint_save_interact(mae, g, save_path)
         #torch.cuda.synchronize()
         train_loader.reset()
-        val_loader.reset() 
+        #val_loader.reset() 
 
 
 def train(train_loader, mae, optimizer, g):
