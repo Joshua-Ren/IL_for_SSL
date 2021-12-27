@@ -193,6 +193,8 @@ def train(train_loader, mae, optimizer, g, scheduler):
             wandb.log({'loss':loss.item()})
         if i%args.print_freq == 0:
             torch.cuda.synchronize()
+    if args.local_rank==0:
+        wandb.log({'epoch':g})
     scheduler.step()
 if __name__ == '__main__':
     main()
