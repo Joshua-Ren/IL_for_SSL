@@ -106,7 +106,7 @@ def main():
         args.gpu = args.local_rank
         torch.cuda.set_device(args.gpu)
         torch.distributed.init_process_group(backend='nccl',
-                                             init_method='tcp://127.0.0.1:23456')
+                                             init_method='env://')
         args.world_size = torch.distributed.get_world_size()
     args.total_batch_size = args.world_size * args.batch_size
     assert torch.backends.cudnn.enabled, "Amp requires cudnn backend to be enabled."
