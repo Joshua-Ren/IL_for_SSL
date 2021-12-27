@@ -53,6 +53,8 @@ def parse():
     parser.add_argument('--local_rank', default=0, type=int)
     parser.add_argument('--workers',default=4, type=int)
     parser.add_argument('--record_gap',default=50, type=int)
+    parser.add_argument('--print-freq', '-p', default=10, type=int,
+                        metavar='N', help='print frequency (default: 10)')
     #parser.add_argument('--enable_distribute',action='store_true')
     args = parser.parse_args()
     return args
@@ -187,9 +189,8 @@ def train(train_loader, mae, optimizer, g):
         optimizer.step()
         if args.local_rank==0:
             wandb.log({'loss':loss.item()})
-        if i==0:
+        if i%args.print_freq == 0:
             torch.cuda.synchronize()
-    torch.cuda.synchronize()
 
 if __name__ == '__main__':
     main()
