@@ -53,6 +53,8 @@ def parse():
     parser.add_argument('--local_rank', default=0, type=int)
     parser.add_argument('--workers',default=4, type=int)
     parser.add_argument('--record_gap',default=50, type=int)
+    parser.add_argument('--prof', default=-1, type=int,
+                        help='Only run 10 iterations for profiling.')
     #parser.add_argument('--enable_distribute',action='store_true')
     args = parser.parse_args()
     return args
