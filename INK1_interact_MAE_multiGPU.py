@@ -157,7 +157,7 @@ def main():
     # ================= Train the model ===========================
     total_time = AverageMeter()
     for g in range(args.epochs):
-        avg_train_time = train(train_loader, mae, optimizer, g)
+        train(train_loader, mae, optimizer, g)
         total_time.update(avg_train_time)
         
         # ----- Do validation only on rank0
@@ -171,10 +171,8 @@ def main():
 
 
 def train(train_loader, mae, optimizer, g):
-    batch_time = AverageMeter()
     losses = AverageMeter()
     mae.train()
-    end = time.time()
     
     for i, data in enumerate(train_loader):
         x = data[0]["data"]
@@ -192,9 +190,6 @@ def train(train_loader, mae, optimizer, g):
         if args.local_rank==0:
             wandb.log({'loss':loss.item()})
         # Pop range "Body of iteration {}".format(i)
-    batch_time.update((time.time() - end)/args.print_freq)
-    end = time.time()
-    return batch_time.avg
 
 if __name__ == '__main__':
     main()
