@@ -122,9 +122,10 @@ def main():
         mae = parallel.convert_syncbn_model(mae)      
     mae.cuda()
     # Scale learning rate based on global batch size
-    args.lr = args.lr*float(args.batch_size*args.world_size)/256.
+    #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
     optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95),
                             weight_decay=args.weight_decay)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
     if args.enable_amp:
         mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
     if args.distributed:
@@ -158,7 +159,7 @@ def main():
         
     # ================= Train the model ===========================
     for g in range(args.epochs):
-        train(train_loader, mae, optimizer, g)
+        train(train_loader, mae, optimizer, g, scheduler)
         
         # ----- Do validation only on rank0
         if args.local_rank==0:
@@ -171,7 +172,7 @@ def main():
         #val_loader.reset() 
 
 
-def train(train_loader, mae, optimizer, g):
+def train(train_loader, mae, optimizer, g, scheduler):
     losses = AverageMeter()
     mae.train()
     
@@ -192,7 +193,7 @@ def train(train_loader, mae, optimizer, g):
             wandb.log({'loss':loss.item()})
         if i%args.print_freq == 0:
             torch.cuda.synchronize()
-
+    scheduler.step()
 if __name__ == '__main__':
     main()
 
