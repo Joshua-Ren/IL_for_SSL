@@ -57,8 +57,6 @@ def parse():
     args = parser.parse_args()
     return args
 
-rnd_seed(args.seed)
-
 # =================== Some utils functions ==========================
 def _recon_validate(TRACK_TVX, mae,table_key='initial'):
     '''
@@ -92,7 +90,7 @@ def adjust_learning_rate(optimizer, epoch, step, len_epoch):
 def main():
     global args
     args = parse()
-    
+    rnd_seed(args.seed)
     # ================= Prepare for distributed training =====
     args.distributed = False
     if 'WORLD_SIZE' in os.environ:
