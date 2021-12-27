@@ -155,10 +155,8 @@ def main():
         TRACK_TVX = TRACK_TVX.cuda()  
         
     # ================= Train the model ===========================
-    total_time = AverageMeter()
     for g in range(args.epochs):
         train(train_loader, mae, optimizer, g)
-        total_time.update(avg_train_time)
         
         # ----- Do validation only on rank0
         if args.local_rank==0:
