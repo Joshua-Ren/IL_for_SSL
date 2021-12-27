@@ -62,7 +62,7 @@ if 'WORLD_SIZE' in os.environ:
 if args.distributed:
     # FOR DISTRIBUTED:  Set the device according to local_rank.
     torch.cuda.set_device(args.local_rank)
-    torch.distributed.init_process_group(backend='nccl',init_method='env://')
+    torch.distributed.init_process_group(backend='nccl',init_method='tcp://127.0.0.1:23456')
     args.world_size = torch.distributed.get_world_size()
 torch.backends.cudnn.benchmark = True
 
