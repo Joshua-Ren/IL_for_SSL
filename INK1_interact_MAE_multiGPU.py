@@ -49,13 +49,13 @@ def parse():
     #parser.add_argument('--enable_distribute',action='store_true')
     args = parser.parse_args()
     
-    if args.model_size.lower()=='tiny':
+    if args.modelsize.lower()=='tiny':
         enc_params = [192, 12, 3, 512]           # dim, depth, heads, mlp_dim
         dec_params = [512, 1]                    # dec_dim, dec_depth
-    elif args.model_size.lower()=='small':
+    elif args.modelsize.lower()=='small':
         enc_params = [384, 12, 6, 1024]          # dim, depth, heads, mlp_dim
         dec_params = [1024, 2]                   # dec_dim, dec_depth
-    elif args.model_size.lower()=='base':
+    elif args.modelsize.lower()=='base':
         enc_params = [768, 12, 12, 2048]         # dim, depth, heads, mlp_dim
         dec_params = [2048, 4]                   # dec_dim, dec_depth
     else:
