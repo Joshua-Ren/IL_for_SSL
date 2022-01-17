@@ -23,9 +23,23 @@ warnings.filterwarnings('ignore')
 IMG_DIR = '/home/sg955/rds/hpc-work/ImageNet/val'
 
 @pipeline_def
-def create_dali_pipeline(data_dir, crop, size, shard_id, num_shards, dali_cpu=False, is_training=True):
+def create_dali_pipeline(dataset, crop, size, shard_id, num_shards, dali_cpu=False, is_training=True):
+
+    if dataset.lower()=='imagenet':
+        DATA_PATH = '/home/sg955/rds/hpc-work/ImageNet/'
+        if is_training:
+            data_dir = os.path.join(DATA_PATH, 'val')
+        else:
+            data_dir = os.path.join(DATA_PATH, 'val')
+    elif dataset.lower()=='tiny':
+        DATA_PATH = '/home/sg955/rds/hpc-work/tiny-imagenet-200/'
+        if is_training:
+            data_dir = os.path.join(DATA_PATH, 'train')
+        else:
+            data_dir = os.path.join(DATA_PATH, 'val')
+    
     images, labels = fn.readers.file(file_root=data_dir, shard_id=shard_id, num_shards=num_shards,
-                                     random_shuffle=is_training, pad_last_batch=True, name="Reader")
+                                    random_shuffle=is_training, pad_last_batch=True, name="Reader")
     dali_device = 'cpu' if dali_cpu else 'gpu'
     decoder_device = 'cpu' if dali_cpu else 'mixed'
     if is_training:
@@ -39,10 +53,12 @@ def create_dali_pipeline(data_dir, crop, size, shard_id, num_shards, dali_cpu=Fa
         mirror = False
 
     images = fn.crop_mirror_normalize(images.gpu(), dtype=types.FLOAT, output_layout="CHW",
-                                      crop=(crop, crop),mean=[0.485 * 255,0.456 * 255,0.406 * 255],
-                                      std=[0.229 * 255,0.224 * 255,0.225 * 255], mirror=mirror)
+                                    crop=(crop, crop),mean=[0.485 * 255,0.456 * 255,0.406 * 255],
+                                    std=[0.229 * 255,0.224 * 255,0.225 * 255], mirror=mirror)
     labels = labels.gpu()
     return images, labels
+
+
 
 
 if __name__ == '__main__':

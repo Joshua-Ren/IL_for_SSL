@@ -1,13 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Dec 18 21:44:23 2021
-@author: YIREN
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Dec 18 17:55:08 2021
-@author: YIREN
+Interaction phase (mask reconstruction)
 """
 import warnings
 warnings.filterwarnings('ignore')
@@ -34,17 +27,13 @@ from einops import rearrange, repeat
 from data_loader import ZipImageNetFolder
 from data_loader_DALI import *
 
-
-K_CLAS = 1000
-
 def parse():
     parser = argparse.ArgumentParser(description='ImageNet1K-MAE')
     parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
     parser.add_argument('--weight_decay', default=0.05, type=float)
-    parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
     parser.add_argument('--batch_size',default=1024, type=int)
     parser.add_argument('--seed',default=10086,type=int)
-    parser.add_argument('--proj_path',default='INK1_Interact_MAE', type=str)
+    parser.add_argument('--proj_path',default='Interact_MAE', type=str)
     parser.add_argument('--epochs',default=1000, type=int)
     parser.add_argument('--mask_ratio',default=0.5,type=float)
     parser.add_argument('--run_name',default=None,type=str)
@@ -52,11 +41,36 @@ def parse():
     parser.add_argument('--sync_bn', action='store_true')
     parser.add_argument('--local_rank', default=0, type=int)
     parser.add_argument('--workers',default=4, type=int)
-    parser.add_argument('--record_gap',default=50, type=int)
+    parser.add_argument('--record_gap',default=100, type=int)
     parser.add_argument('--print-freq', '-p', default=10, type=int,
                         metavar='N', help='print frequency (default: 10)')
+    parser.add_argument('--dataset',type=str,default='imagenet',help='can be imagenet, tiny')
+    parser.add_argument('--modelsize',type=str,default='tiny',help='ViT model size, must be tiny, small or base')
     #parser.add_argument('--enable_distribute',action='store_true')
     args = parser.parse_args()
+    
+    if args.model_size.lower()=='tiny':
+        enc_params = [192, 12, 3, 512]           # dim, depth, heads, mlp_dim
+        dec_params = [512, 1]                    # dec_dim, dec_depth
+    elif args.model_size.lower()=='small':
+        enc_params = [384, 12, 6, 1024]          # dim, depth, heads, mlp_dim
+        dec_params = [1024, 2]                   # dec_dim, dec_depth
+    elif args.model_size.lower()=='base':
+        enc_params = [768, 12, 12, 2048]         # dim, depth, heads, mlp_dim
+        dec_params = [2048, 4]                   # dec_dim, dec_depth
+    else:
+        print('ViT model size must be tiny, small, or base')
+    [args.enc_dim, args.enc_depth, args.enc_heads, args.enc_mlp] = enc_params
+    [args.dec_dim, args.dec_depth] = dec_params
+
+    if args.dataset.lower()=='imagenet':
+        tmp_kfp=[1000, 256, 224, 14, 4] # k_clas, fill_size, fig_size, patch_size, ds_ratio
+    elif args.dataset.lower()=='tiny':
+        tmp_kfp=[200, 64, 64, 8, 1]
+    else:
+        print('dataset must be imagenet or tiny')
+    [args.k_clas, args.fill_size, args.fig_size, args.patch_size, args.ds_ratio] = tmp_kfp
+    args.patch_num=int(args.fig_size/args.patch_size)
     return args
 
 # =================== Some utils functions ==========================
@@ -67,19 +81,16 @@ def _recon_validate(TRACK_TVX, mae,table_key='initial'):
     '''
     loss, recon_img_patches = mae(TRACK_TVX)
     recon_imgs = rearrange(recon_img_patches, 'b (h w) (p1 p2 c) -> b c (h p1) (w p2)', 
-                               h=14,w=14,c=3, p1=16,p2=16)
+                               h=args.patch_size,w=args.patch_size,c=3, p1=args.patch_num,p2=args.patch_num)
     origi_imgs = TRACK_TVX
-    wandb_show16imgs(recon_imgs, origi_imgs, table_key=table_key, ds_ratio=4)
+    wandb_show16imgs(recon_imgs, origi_imgs, table_key=table_key, ds_ratio=args.ds_ratio)
 
 def adjust_learning_rate(optimizer, epoch, step, len_epoch):
     """LR schedule that should yield 76% converged accuracy with batch size 256"""
     factor = epoch // 30
-
     if epoch >= 80:
         factor = factor + 1
-
     lr = args.lr*(0.1**factor)
-
     """Warmup"""
     if epoch < 5:
         lr = lr*float(1 + step + epoch*len_epoch)/(5.*len_epoch)
@@ -112,11 +123,10 @@ def main():
         args.world_size = torch.distributed.get_world_size()
     args.total_batch_size = args.world_size * args.batch_size
     assert torch.backends.cudnn.enabled, "Amp requires cudnn backend to be enabled."
-
     # ================== Create the model: mae ==================
-    encoder = ViT(image_size = 224, patch_size = 16, num_classes = 1000,
-                  dim = 1024, depth = 6, heads = 8, mlp_dim = 2048)
-    mae = my_MAE(encoder=encoder, masking_ratio = 0.75, decoder_dim = 512, decoder_depth=1)
+    encoder = ViT(image_size=args.fig_size, patch_size=args.patch_size, num_classes=args.k_clas,
+                  dim=args.enc_dim, depth=args.enc_depth, heads=args.enc_heads, mlp_dim=args.enc_mlp)
+    mae = my_MAE(encoder=encoder, masking_ratio=args.mask_ratio, decoder_dim=args.dec_dim, decoder_depth=args.dec_depth)
     if args.sync_bn:
         print("using apex synced BN")
         mae = parallel.convert_syncbn_model(mae)      
@@ -132,17 +142,14 @@ def main():
         mae = DDP(mae, delay_allreduce=True)
     
     # ================== Prepare for the dataloader ===============
-    DATA_PATH = '/home/sg955/rds/hpc-work/ImageNet/'
-    traindir = os.path.join(DATA_PATH, 'val')
-    valdir = os.path.join(DATA_PATH, 'val')
-    pipe = create_dali_pipeline(batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
-                                seed=12+args.local_rank, data_dir=traindir, crop=224, size=256, dali_cpu=False,
+    pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
+                                seed=12+args.local_rank, crop=args.fig_size, size=args.fill_size, dali_cpu=False,
                                 shard_id=args.local_rank, num_shards=args.world_size, is_training=True)
     pipe.build()
     train_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
     
-    pipe = create_dali_pipeline(batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
-                                seed=12+args.local_rank, data_dir=valdir, crop=224, size=256, dali_cpu=False,
+    pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
+                                seed=12+args.local_rank, crop=args.fig_size, size=args.fill_size, dali_cpu=False,
                                 shard_id=args.local_rank, num_shards=args.world_size, is_training=False)
     pipe.build()
     val_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
@@ -151,7 +158,7 @@ def main():
     if args.local_rank==0:
         run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
         #run_name = 'add'
-        save_path = './results/INK1_MAE/run_'+run_name
+        save_path = './results/'+args.proj_path+'/'+args.dataset+'/'+args.modelsize+run_name
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
@@ -166,8 +173,8 @@ def main():
             _recon_validate(TRACK_TVX, mae,table_key='latest')
             if g%args.record_gap == 0:
                 _recon_validate(TRACK_TVX, mae,table_key='epoch_'+str(g))
-                #checkpoint_save_interact(mae, g, save_path)
-        #torch.cuda.synchronize()
+                checkpoint_save_interact(mae, g, save_path)
+        #torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
         train_loader.reset()
         #val_loader.reset() 
 

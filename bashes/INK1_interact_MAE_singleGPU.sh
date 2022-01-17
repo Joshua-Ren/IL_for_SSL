@@ -17,4 +17,5 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python test_multiple_GPU.py --run_name test_1GPU
+srun python INK1_interact_MAE_multiGPU.py --enable_amp\
+--run_name try_1GPU --dataset tiny --modelsize tiny
