@@ -44,7 +44,7 @@ def checkpoint_save_interact(mae, g, save_path):
     file_name = 'encoder_ep'+str(g)+'.pt'
     path = os.path.join(path, file_name)
     torch.save(mae.encoder.state_dict(), path)
-    return file_name
+    return path
     
 def checkpoint_save_pretrain(encoder, g, save_path):
     path = os.path.join(save_path,'checkpoint')
