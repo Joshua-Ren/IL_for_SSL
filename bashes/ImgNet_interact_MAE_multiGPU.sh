@@ -5,9 +5,11 @@
 #SBATCH --job-name=mae
 #SBATCH --output=./logs/test.txt
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:4
+
 export NCCL_P2P_DISABLE=1
 export NCCL_IB_DISABLE=1
+
 . /etc/profile.d/modules.sh
 module purge
 module load rhel8/default-amp
@@ -17,5 +19,5 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python INK1_interact_MAE_multiGPU.py --enable_amp \
---run_name try_1GPU --dataset tiny --modelsize tiny
+srun python -m torch.distributed.launch --nproc_per_node=4 --master_port 10086 ImgNet_interact_MAE_multiGPU.py --enable_amp \
+--run_name try_4GPU --dataset tiny --modelsize tiny
