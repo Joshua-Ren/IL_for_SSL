@@ -176,14 +176,12 @@ def main():
         if g%args.record_gap == 0:
             if args.local_rank==0:
                 CK_PATH = checkpoint_save_interact(mae, g, save_path)
-            if args.distributed:
+            if False:#args.distributed:
                 dist.barrier()
                 # configure map_location properly
                 map_location = {'cuda:%d' % 0: 'cuda:%d' % args.local_rank}
                 mae.load_state_dict(
-                    torch.load(CK_PATH, map_location=map_location))            
-        
-
+                    torch.load(CK_PATH, map_location=map_location))
         #torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
         train_loader.reset()
         #val_loader.reset() 
