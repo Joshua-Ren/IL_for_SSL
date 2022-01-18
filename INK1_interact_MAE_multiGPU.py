@@ -26,6 +26,7 @@ from my_MAE import my_MAE
 from einops import rearrange, repeat
 from data_loader import ZipImageNetFolder
 from data_loader_DALI import *
+import torch.distributed as dist
 
 def parse():
     parser = argparse.ArgumentParser(description='ImageNet1K-MAE')
@@ -171,9 +172,20 @@ def main():
         # ----- Do validation only on rank0
         if args.local_rank==0:
             _recon_validate(TRACK_TVX, mae,table_key='latest')
-            if g%args.record_gap == 0:
+
+        if g%args.record_gap == 0:
+            if args.local_rank==0:
                 _recon_validate(TRACK_TVX, mae,table_key='epoch_'+str(g))
-                checkpoint_save_interact(mae, g, save_path)
+                CK_PATH = checkpoint_save_interact(mae, g, save_path)
+            if args.distributed:
+                dist.barrier()
+                # configure map_location properly
+                map_location = {'cuda:%d' % 0: 'cuda:%d' % args.local_rank}
+                mae.encoder.load_state_dict(
+                    torch.load(CK_PATH, map_location=map_location))            
+        
+
+
         #torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
         train_loader.reset()
         #val_loader.reset() 
