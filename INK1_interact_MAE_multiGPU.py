@@ -180,7 +180,7 @@ def main():
                 dist.barrier()
                 # configure map_location properly
                 map_location = {'cuda:%d' % 0: 'cuda:%d' % args.local_rank}
-                mae.encoder.load_state_dict(
+                mae.load_state_dict(
                     torch.load(CK_PATH, map_location=map_location))            
         
 
