@@ -175,7 +175,6 @@ def main():
 
         if g%args.record_gap == 0:
             if args.local_rank==0:
-                _recon_validate(TRACK_TVX, mae,table_key='epoch_'+str(g))
                 CK_PATH = checkpoint_save_interact(mae, g, save_path)
             if args.distributed:
                 dist.barrier()
