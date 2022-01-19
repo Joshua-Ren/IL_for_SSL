@@ -132,7 +132,8 @@ def main():
     mae.cuda()
 
     if args.local_rank==0:
-        torch.save(mae.state_dict(),'test.pt')
+        CK_PATH = checkpoint_save_interact(mae, 11, 'test')
+
     '''
     # Scale learning rate based on global batch size
     #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
