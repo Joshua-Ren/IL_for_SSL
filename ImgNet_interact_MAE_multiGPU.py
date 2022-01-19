@@ -132,6 +132,7 @@ def main():
     mae.cuda()
     init_key = list(mae.state_dict().keys())
     print(init_key[0])
+    '''
     # Scale learning rate based on global batch size
     #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
     optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95),
@@ -183,7 +184,7 @@ def main():
         #torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
         train_loader.reset()
         #val_loader.reset() 
-
+'''
 
 def train(train_loader, mae, optimizer, g):
     mae.train()
