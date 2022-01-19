@@ -128,7 +128,7 @@ def main():
     # Here we create mae and only use encoder to make finetune (as checkpoint is saved as mae)
     encoder = ViT(image_size=args.fig_size, patch_size=args.patch_size, num_classes=args.k_clas,
                   dim=args.enc_dim, depth=args.enc_depth, heads=args.enc_heads, mlp_dim=args.enc_mlp)
-    mae = my_MAE(encoder=encoder, masking_ratio=args.mask_ratio, decoder_dim=args.dec_dim, decoder_depth=args.dec_depth)
+    mae = my_MAE(encoder=encoder, masking_ratio=0.5, decoder_dim=args.dec_dim, decoder_depth=args.dec_depth)
     if not args.scratch:
         mae.load_state_dict(torch.load(args.load_ckpt_path))
     if args.sync_bn:
