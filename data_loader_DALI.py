@@ -20,7 +20,7 @@ import nvidia.dali.fn as fn
 import warnings
 warnings.filterwarnings('ignore')
 
-LOCAL_PATH = 'E:\DATASET\tiny-imagenet-200'
+#LOCAL_PATH = 'E:\DATASET\tiny-imagenet-200'
 
 @pipeline_def
 def create_dali_pipeline(dataset, crop, size, shard_id, num_shards, dali_cpu=False, is_training=True):
