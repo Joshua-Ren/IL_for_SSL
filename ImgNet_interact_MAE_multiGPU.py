@@ -131,10 +131,6 @@ def main():
         mae = parallel.convert_syncbn_model(mae)      
     mae.cuda()
 
-    if args.local_rank==0:
-        CK_PATH = checkpoint_save_interact(mae, 11, 'test')
-
-    '''
     # Scale learning rate based on global batch size
     #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
     optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95),
@@ -143,7 +139,10 @@ def main():
         mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
     if args.distributed:
         mae = DDP(mae, delay_allreduce=True)
-    
+        
+    if args.local_rank==0:
+        CK_PATH = checkpoint_save_interact(mae, 11, 'test')
+    '''
     # ================== Prepare for the dataloader ===============
     pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
                                 seed=12+args.local_rank, crop=args.fig_size, size=args.fill_size, dali_cpu=False,
