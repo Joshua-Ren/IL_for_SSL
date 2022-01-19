@@ -2,7 +2,7 @@
 #SBATCH -A NLP-CDT-SL2-GPU
 #SBATCH -p ampere
 #SBATCH --time=36:00:00
-#SBATCH --job-name=mae
+#SBATCH --job-name=interact
 #SBATCH --output=./logs/test.txt
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1

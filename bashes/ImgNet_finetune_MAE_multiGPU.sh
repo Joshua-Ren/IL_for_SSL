@@ -2,7 +2,7 @@
 #SBATCH -A NLP-CDT-SL2-GPU
 #SBATCH -p ampere
 #SBATCH --time=36:00:00
-#SBATCH --job-name=interact
+#SBATCH --job-name=finetune
 #SBATCH --output=./logs/test.txt
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:4
@@ -19,5 +19,6 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python -m torch.distributed.launch --nproc_per_node=4 --master_port 10086 ImgNet_interact_MAE_multiGPU.py --enable_amp \
---run_name try_4GPU --dataset tiny --modelsize tiny
+srun python -m torch.distributed.launch --nproc_per_node=4 --master_port 10086 ImgNet_finetune_multiGPU.py --enable_amp \
+--run_name finetune_4GPU --dataset tiny --modelsize tiny \
+--loadrun tinytry_4GPU --loadep ep0
