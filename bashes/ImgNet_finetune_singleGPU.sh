@@ -21,4 +21,4 @@ cd /home/sg955/GitWS/IL_for_SSL/
 
 srun python -m torch.distributed.launch --nproc_per_node=4 --master_port 10086 ImgNet_finetune_multiGPU.py --enable_amp \
 --run_name finetune_4GPU_ep400 --dataset tiny --modelsize tiny \
---loadrun tinytry_4GPU --loadep ep400
+--loadrun tinytry_1GPU --loadep ep400
