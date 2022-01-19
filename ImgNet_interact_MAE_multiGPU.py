@@ -83,7 +83,9 @@ def _recon_validate(TRACK_TVX, mae,table_key='initial'):
     wandb_show16imgs(recon_imgs, origi_imgs, table_key=table_key, ds_ratio=args.ds_ratio)
 
 def adjust_learning_rate(args, optimizer, epoch):
-        """warm up (linearly to lr) 5-10 epoch, then cosine decay to lr_min"""
+    """
+        warm up (linearly to lr) 5-10 epoch, then cosine decay to lr_min
+    """
     warmup_ep = 10
     lr_min = 1e-7
     lr_start = args.lr
