@@ -28,24 +28,31 @@ from data_loader_DALI import *
 import torch.distributed as dist
 
 def parse():
-    parser = argparse.ArgumentParser(description='ImageNet-MAE')
+    parser = argparse.ArgumentParser(description='ImageNet-Finetune')
+    parser.add_argument('--scratch',action='store_true',help='train from scratch')
     parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
     parser.add_argument('--weight_decay', default=0.05, type=float)
     parser.add_argument('--batch_size',default=1024, type=int)
     parser.add_argument('--seed',default=10086,type=int)
-    parser.add_argument('--proj_path',default='Interact_MAE', type=str)
-    parser.add_argument('--epochs',default=1000, type=int)
-    parser.add_argument('--mask_ratio',default=0.5,type=float)
+    parser.add_argument('--proj_path',default='Finetune_MAE', type=str)
+    parser.add_argument('--epochs',default=200, type=int)
+    parser.add_argument('--accfreq',default=10, type=int, help='every xx iteration, update acc')
     parser.add_argument('--run_name',default=None,type=str)
     parser.add_argument('--enable_amp',action='store_true')
     parser.add_argument('--sync_bn', action='store_true')
     parser.add_argument('--local_rank', default=0, type=int)
     parser.add_argument('--workers',default=4, type=int)
-    parser.add_argument('--record_gap',default=100, type=int)
     parser.add_argument('--dataset',type=str,default='imagenet',help='can be imagenet, tiny')
     parser.add_argument('--modelsize',type=str,default='tiny',help='ViT model size, must be tiny, small or base')
+    parser.add_argument('--loadrun',type=str,default='tinytry_4GPU')
+    parser.add_argument('--loadep',type=str,default='ep0')
     args = parser.parse_args()
     
+    # For example ../Interact_MAE/tiny/tinytry_4GPU/checkpoint/encoder_ep0.pt
+    base_path = '/home/sg955/GitWS/IL_for_SSL/results/Interact_MAE/'
+    base_file = 'encoder_'+args.loadep+'.pt'
+    args.load_ckpt_path = os.path.join(base_path,args.modelsize.lower(),
+                           args.loadrun,'checkpoint', base_file)   
     if args.modelsize.lower()=='tiny':
         enc_params = [192, 12, 3, 512]           # dim, depth, heads, mlp_dim
         dec_params = [512, 1]                    # dec_dim, dec_depth
@@ -69,23 +76,18 @@ def parse():
     [args.k_clas, args.fill_size, args.fig_size, args.patch_size, args.ds_ratio] = tmp_kfp
     args.patch_num=int(args.fig_size/args.patch_size)
     return args
-
+    
 # =================== Some utils functions ==========================
-def _recon_validate(TRACK_TVX, mae,table_key='initial'):
-    '''
-        For image reconstruction, feed TRACK_TVX to the mae model
-        then show the reconstruction and original figure on W&B
-    '''
-    loss, recon_img_patches = mae(TRACK_TVX)
-    recon_imgs = rearrange(recon_img_patches, 'b (h w) (p1 p2 c) -> b c (h p1) (w p2)', 
-                               h=args.patch_size,w=args.patch_size,c=3, p1=args.patch_num,p2=args.patch_num)
-    origi_imgs = TRACK_TVX
-    wandb_show16imgs(recon_imgs, origi_imgs, table_key=table_key, ds_ratio=args.ds_ratio)
-
+def reduce_tensor(tensor):
+    rt = tensor.clone()
+    dist.all_reduce(rt, op=dist.reduce_op.SUM)
+    rt /= args.world_size
+    return rt
+    
 def adjust_learning_rate(args, optimizer, epoch):
         """warm up (linearly to lr) 5-10 epoch, then cosine decay to lr_min"""
     warmup_ep = 10
-    lr_min = 1e-7
+    lr_min = 1e-6
     lr_start = args.lr
     if epoch<warmup_ep:
         lr_current = lr_min+(lr_start-lr_min)*(epoch)/warmup_ep
@@ -94,6 +96,7 @@ def adjust_learning_rate(args, optimizer, epoch):
         lr_current = lr_min+0.5*(lr_start-lr_min)*(1+np.cos(degree))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr_current
+    return lr_current
 
 # ======================== Main and Train ==========================
 def main():
@@ -120,22 +123,24 @@ def main():
     args.total_batch_size = args.world_size * args.batch_size
     assert torch.backends.cudnn.enabled, "Amp requires cudnn backend to be enabled."
     # ================== Create the model: mae ==================
+    # Here we create mae and only use encoder to make finetune (as checkpoint is saved as mae)
     encoder = ViT(image_size=args.fig_size, patch_size=args.patch_size, num_classes=args.k_clas,
                   dim=args.enc_dim, depth=args.enc_depth, heads=args.enc_heads, mlp_dim=args.enc_mlp)
     mae = my_MAE(encoder=encoder, masking_ratio=args.mask_ratio, decoder_dim=args.dec_dim, decoder_depth=args.dec_depth)
+    if not args.scratch:
+        mae.load_state_dict(torch.load(args.load_ckpt_path))
     if args.sync_bn:
         print("using apex synced BN")
-        mae = parallel.convert_syncbn_model(mae)      
-    mae.cuda()
+        encoder = parallel.convert_syncbn_model(encoder)      
+    encoder.cuda()
     # Scale learning rate based on global batch size
     #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
-    optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95),
+    optimizer = optim.AdamW(encoder.parameters(), lr=args.lr, betas=(0.9, 0.95),
                             weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
     if args.enable_amp:
-        mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
+        encoder, optimizer = amp.initialize(encoder, optimizer, opt_level="O1")
     if args.distributed:
-        mae = DDP(mae, delay_allreduce=True)
+        encoder = DDP(encoder, delay_allreduce=True)
     
     # ================== Prepare for the dataloader ===============
     pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
@@ -157,41 +162,30 @@ def main():
         save_path = './results/'+args.proj_path+'/'+args.dataset+'/'+args.modelsize+run_name
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-        TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
-        TRACK_TVX = TRACK_TVX.cuda()  
-        
+
     # ================= Train the model ===========================
     for g in range(args.epochs):
-        train(train_loader, mae, optimizer, g, scheduler)
-        
-        # ----- Do validation only on rank0
-        if args.local_rank==0:
-            _recon_validate(TRACK_TVX, mae,table_key='latest')
+        train(train_loader, encoder, optimizer, g)
+        _accuracy_validate(val_loader, encoder)
 
-        if g%args.record_gap == 0:
-            if args.local_rank==0:
-                CK_PATH = checkpoint_save_interact(mae, g, save_path)
-            if False:#args.distributed:
-                dist.barrier()
-                # configure map_location properly
-                map_location = {'cuda:%d' % 0: 'cuda:%d' % args.local_rank}
-                mae.load_state_dict(
-                    torch.load(CK_PATH, map_location=map_location))
-        #torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
+        torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
         train_loader.reset()
-        #val_loader.reset() 
+        val_loader.reset()
 
-
-def train(train_loader, mae, optimizer, g, scheduler):
+def train(train_loader, encoder, optimizer, g):
     losses = AverageMeter()
-    mae.train()
-    
+    top1 = AverageMeter()
+    top5 = AverageMeter()
+    encoder.train()
+
     for i, data in enumerate(train_loader):
         x = data[0]["data"]
+        y = data[0]["label"].squeeze(-1).long()
         train_loader_len = int(math.ceil(train_loader._size / args.batch_size))
         adjust_learning_rate(optimizer, g, i, train_loader_len)
-        # compute output
-        loss,_ = mae(x)
+        # compute output, for encoder, we need cls token to get hid
+        hid = encoder(x)
+        loss = nn.CrossEntropyLoss()(hid, y)
         optimizer.zero_grad()
         if args.enable_amp:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -199,34 +193,65 @@ def train(train_loader, mae, optimizer, g, scheduler):
         else:
             loss.backward()
         optimizer.step()
-        if args.local_rank==0:
-            wandb.log({'loss':loss.item()})
-        if i%args.print_freq == 0:
+        if i%args.accfreq == 0:
+            prec1, prec5 = accuracy(hid.data, y, topk=(1, 5))
+            if args.distributed:
+                reduced_loss = reduce_tensor(loss.data)
+                prec1 = reduce_tensor(prec1)
+                prec5 = reduce_tensor(prec5)
+            else:
+                reduced_loss = loss.data
+            losses.update(reduced_loss.item(), x.size(0))
+            top1.update(prec1.item(), x.size(0))
+            top5.update(prec5.item(), x.size(0))   
             torch.cuda.synchronize()
+            if args.local_rank==0:
+                wandb.log({'loss':loss.item()})
     if args.local_rank==0:
+        curr_lr = adjust_learning_rate(args, optimizer, g)
         wandb.log({'epoch':g})
-    scheduler.step()
+        wandb.log({'train_loss':losses.avg})
+        wandb.log({'train_top1':top1.avg})
+        wandb.log({'train_top5':top5.avg})
+        wandb.log({'learn_rate':curr_lr})
+    
+def _accuracy_validate(val_loader, encoder):
+    '''
+        Calculate validation accuracy, support multi-GPU
+    '''
+    losses = AverageMeter()
+    top1 = AverageMeter()
+    top5 = AverageMeter()
+    # switch to evaluate mode
+    encoder.eval()
+
+    end = time.time()
+
+    for i, data in enumerate(val_loader):
+        x = data[0]["data"]
+        y = data[0]["label"].squeeze(-1).long()
+        val_loader_len = int(val_loader._size / args.batch_size)
+
+        # compute output
+        with torch.no_grad():
+            hid = encoder(input)
+            loss = nn.CrossEntropyLoss()(hid, y)
+        # measure accuracy and record loss
+        prec1, prec5 = accuracy(hid.data, y, topk=(1, 5))
+
+        if args.distributed:
+            reduced_loss = reduce_tensor(loss.data)
+            prec1 = reduce_tensor(prec1)
+            prec5 = reduce_tensor(prec5)
+        else:
+            reduced_loss = loss.data
+
+        losses.update(reduced_loss.item(), input.size(0))
+        top1.update(prec1.item(), input.size(0))
+        top5.update(prec5.item(), input.size(0))
+    if args.local_rank==0:
+        wandb.log({'valid_loss':losses.avg})
+        wandb.log({'valid_top1':top1.avg})
+        wandb.log({'valid_top5':top5.avg})
 if __name__ == '__main__':
-    main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    main()        
