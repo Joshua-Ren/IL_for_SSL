@@ -85,7 +85,9 @@ def reduce_tensor(tensor):
     return rt
     
 def adjust_learning_rate(args, optimizer, epoch):
-        """warm up (linearly to lr) 5-10 epoch, then cosine decay to lr_min"""
+    """
+    warm up (linearly to lr) 5-10 epoch, then cosine decay to lr_min
+    """
     warmup_ep = 10
     lr_min = 1e-6
     lr_start = args.lr
