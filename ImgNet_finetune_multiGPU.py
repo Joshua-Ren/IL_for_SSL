@@ -231,11 +231,10 @@ def _accuracy_validate(val_loader, encoder):
     for i, data in enumerate(val_loader):
         x = data[0]["data"]
         y = data[0]["label"].squeeze(-1).long()
-        val_loader_len = int(val_loader._size / args.batch_size)
 
         # compute output
         with torch.no_grad():
-            hid = encoder(input)
+            hid = encoder(x)
             loss = nn.CrossEntropyLoss()(hid, y)
         # measure accuracy and record loss
         prec1, prec5 = accuracy(hid.data, y, topk=(1, 5))
