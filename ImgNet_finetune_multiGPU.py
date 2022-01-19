@@ -138,7 +138,7 @@ def main():
         mae.load_state_dict(ckp)
 
     # Scale learning rate based on global batch size
-    #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
+    args.lr = args.lr*float(args.batch_size*args.world_size)/256.
     optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95),
                             weight_decay=args.weight_decay)
     if args.enable_amp:
