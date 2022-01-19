@@ -132,7 +132,7 @@ def main():
     mae.cuda()
 
     if args.local_rank==0:
-        torch.save(mae,'test.pt')
+        torch.save(mae.state_dict(),'test.pt')
     '''
     # Scale learning rate based on global batch size
     #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
