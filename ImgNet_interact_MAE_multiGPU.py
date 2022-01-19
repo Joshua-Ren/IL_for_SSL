@@ -34,7 +34,7 @@ def parse():
     parser.add_argument('--batch_size',default=1024, type=int)
     parser.add_argument('--seed',default=10086,type=int)
     parser.add_argument('--proj_path',default='Interact_MAE', type=str)
-    parser.add_argument('--epochs',default=1000, type=int)
+    parser.add_argument('--epochs',default=10, type=int)
     parser.add_argument('--mask_ratio',default=0.5,type=float)
     parser.add_argument('--run_name',default=None,type=str)
     parser.add_argument('--enable_amp',action='store_true')
