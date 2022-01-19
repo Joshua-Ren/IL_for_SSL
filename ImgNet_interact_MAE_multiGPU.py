@@ -130,6 +130,8 @@ def main():
         print("using apex synced BN")
         mae = parallel.convert_syncbn_model(mae)      
     mae.cuda()
+    init_key = list(mae.state_dict().keys())
+    print(init_key[0])
     # Scale learning rate based on global batch size
     #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
     optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95),
