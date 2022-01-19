@@ -70,6 +70,17 @@ def checkpoint_save_pretrain(encoder, g, save_path):
     path = os.path.join(path, file_name)
     torch.save(encoder.state_dict(), path)
 
+def ckp_converter(orig_model):
+    if list(orig_model.keys())[0][:6]=='module':
+        from collections import OrderedDict
+        new_model = OrderedDict()
+        for k, v in orig_model.items():
+            name = k[7:]
+            new_model[name]=v
+        return new_model
+    else:
+        return orig_model
+
 # ================== Functions about wandb ===================================
 def wandb_gen_track_x(train_loader,val_loader):
     for i,data in enumerate(train_loader):

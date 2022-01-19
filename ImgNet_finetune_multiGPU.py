@@ -133,16 +133,19 @@ def main():
         print("using apex synced BN")
         mae = parallel.convert_syncbn_model(mae)      
     mae.cuda()
+    if not args.scratch:
+        ckp = ckp_converter(torch.load(args.load_ckpt_path))
+        mae.load_state_dict(ckp)
+
     # Scale learning rate based on global batch size
     #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
     optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95),
                             weight_decay=args.weight_decay)
     if args.enable_amp:
-        mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
+        encoder, optimizer = amp.initialize(encoder, optimizer, opt_level="O1")
     if args.distributed:
-        mae = DDP(mae, delay_allreduce=True)
-    if not args.scratch:
-        mae.load_state_dict(torch.load(args.load_ckpt_path))    
+        encoder = DDP(encoder, delay_allreduce=True)
+ 
     # ================== Prepare for the dataloader ===============
     pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
                                 seed=12+args.local_rank, crop=args.fig_size, size=args.fill_size, dali_cpu=False,
@@ -166,8 +169,8 @@ def main():
 
     # ================= Train the model ===========================
     for g in range(args.epochs):
-        train(train_loader, mae.encoder, optimizer, g)
-        _accuracy_validate(val_loader, mae.encoder)
+        train(train_loader, encoder, optimizer, g)
+        _accuracy_validate(val_loader, encoder)
         torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
         train_loader.reset()
         val_loader.reset()

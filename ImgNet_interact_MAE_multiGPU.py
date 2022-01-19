@@ -140,9 +140,6 @@ def main():
     if args.distributed:
         mae = DDP(mae, delay_allreduce=True)
 
-    if args.local_rank==0:
-        CK_PATH = checkpoint_save_interact(mae.modules(), 11, 'test')
-    '''
     # ================== Prepare for the dataloader ===============
     pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
                                 seed=12+args.local_rank, crop=args.fig_size, size=args.fill_size, dali_cpu=False,
@@ -185,7 +182,6 @@ def main():
         #torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
         train_loader.reset()
         #val_loader.reset() 
-'''
 
 def train(train_loader, mae, optimizer, g):
     mae.train()
