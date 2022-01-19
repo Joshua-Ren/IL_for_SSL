@@ -33,7 +33,6 @@ def create_dali_pipeline(dataset, crop, size, shard_id, num_shards, dali_cpu=Fal
             data_dir = os.path.join(DATA_PATH, 'val')
     elif dataset.lower()=='tiny':
         DATA_PATH = '/home/sg955/rds/hpc-work/tiny-imagenet-200/'
-        DATA_PATH = LOCAL_PATH
         if is_training:
             data_dir = os.path.join(DATA_PATH, 'train')
         else:
