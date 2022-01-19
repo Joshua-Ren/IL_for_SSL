@@ -184,9 +184,9 @@ def train(train_loader, encoder, optimizer, g):
     for i, data in enumerate(train_loader):
         x = data[0]["data"]
         y = data[0]["label"].squeeze(-1).long()
-        print(y.shape)
         # compute output, for encoder, we need cls token to get hid
         hid = encoder(x)
+        print(hid.shape)
         loss = nn.CrossEntropyLoss()(hid, y)
         optimizer.zero_grad()
         if args.enable_amp:
