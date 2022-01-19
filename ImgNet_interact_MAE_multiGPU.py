@@ -133,7 +133,6 @@ def main():
     #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
     optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95),
                             weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=5e-6)
     if args.enable_amp:
         mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
     if args.distributed:
@@ -184,14 +183,11 @@ def main():
         #val_loader.reset() 
 
 
-def train(train_loader, mae, optimizer, g, scheduler):
-    losses = AverageMeter()
+def train(train_loader, mae, optimizer, g):
     mae.train()
     
     for i, data in enumerate(train_loader):
         x = data[0]["data"]
-        train_loader_len = int(math.ceil(train_loader._size / args.batch_size))
-        adjust_learning_rate(optimizer, g, i, train_loader_len)
         # compute output
         loss,_ = mae(x)
         optimizer.zero_grad()
@@ -206,8 +202,9 @@ def train(train_loader, mae, optimizer, g, scheduler):
         if i%args.print_freq == 0:
             torch.cuda.synchronize()
     if args.local_rank==0:
+        curr_lr = adjust_learning_rate(args, optimizer, g)
+        wandb.log({'learn_rate':curr_lr})
         wandb.log({'epoch':g})
-    scheduler.step()
 if __name__ == '__main__':
     main()
 

@@ -181,8 +181,6 @@ def train(train_loader, encoder, optimizer, g):
     for i, data in enumerate(train_loader):
         x = data[0]["data"]
         y = data[0]["label"].squeeze(-1).long()
-        train_loader_len = int(math.ceil(train_loader._size / args.batch_size))
-        adjust_learning_rate(optimizer, g, i, train_loader_len)
         # compute output, for encoder, we need cls token to get hid
         hid = encoder(x)
         loss = nn.CrossEntropyLoss()(hid, y)
