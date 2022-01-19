@@ -5,7 +5,7 @@
 #SBATCH --job-name=finetune
 #SBATCH --output=./logs/test.txt
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:4
 
 export NCCL_P2P_DISABLE=1
 export NCCL_IB_DISABLE=1
@@ -19,6 +19,6 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python ImgNet_finetune_multiGPU.py --enable_amp \
---run_name finetune_4GPU_ep400_slr --dataset tiny --modelsize tiny \
+srun python -m torch.distributed.launch --nproc_per_node=4 --master_port 10086 ImgNet_finetune_multiGPU.py --enable_amp \
+--run_name finetune_4GPU_ep400 --dataset tiny --modelsize tiny \
 --loadrun tinytry_1GPU --loadep ep400 --lr 0.00001
