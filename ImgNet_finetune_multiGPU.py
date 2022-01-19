@@ -246,9 +246,9 @@ def _accuracy_validate(val_loader, encoder):
         else:
             reduced_loss = loss.data
 
-        losses.update(reduced_loss.item(), input.size(0))
-        top1.update(prec1.item(), input.size(0))
-        top5.update(prec5.item(), input.size(0))
+        losses.update(reduced_loss.item(), x.size(0))
+        top1.update(prec1.item(), x.size(0))
+        top5.update(prec5.item(), x.size(0))
     if args.local_rank==0:
         wandb.log({'valid_loss':losses.avg})
         wandb.log({'valid_top1':top1.avg})
