@@ -163,8 +163,7 @@ def main():
         
     # ================= Train the model ===========================
     for g in range(args.epochs):
-        train(train_loader, mae, optimizer, g, scheduler)
-        
+        train(train_loader, mae, optimizer, g)
         # ----- Do validation only on rank0
         if args.local_rank==0:
             _recon_validate(TRACK_TVX, mae,table_key='latest')
