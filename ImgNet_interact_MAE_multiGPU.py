@@ -130,8 +130,9 @@ def main():
         print("using apex synced BN")
         mae = parallel.convert_syncbn_model(mae)      
     mae.cuda()
-    init_key = list(mae.state_dict().keys())
-    print(init_key[0])
+
+    if args.local_rank==0:
+        torch.save(mae,'test.pt')
     '''
     # Scale learning rate based on global batch size
     #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
