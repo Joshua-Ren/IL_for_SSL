@@ -53,7 +53,6 @@ def parse():
     base_file = 'encoder_'+args.loadep+'.pt'
     args.load_ckpt_path = os.path.join(base_path,args.modelsize.lower(),
                            args.loadrun,'checkpoint', base_file) 
-    args.load_ckpt_path = 'E:\project2_MAE\IL_for_SSL\results\example_checkpoint\encoder_ep0.pt'
     if args.modelsize.lower()=='tiny':
         enc_params = [192, 12, 3, 512]           # dim, depth, heads, mlp_dim
         dec_params = [512, 1]                    # dec_dim, dec_depth
