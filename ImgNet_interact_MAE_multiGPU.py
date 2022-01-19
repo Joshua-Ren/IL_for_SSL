@@ -139,9 +139,9 @@ def main():
         mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
     if args.distributed:
         mae = DDP(mae, delay_allreduce=True)
-        
+
     if args.local_rank==0:
-        CK_PATH = checkpoint_save_interact(mae, 11, 'test')
+        CK_PATH = checkpoint_save_interact(mae.modules(), 11, 'test')
     '''
     # ================== Prepare for the dataloader ===============
     pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
