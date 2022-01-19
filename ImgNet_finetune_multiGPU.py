@@ -52,7 +52,8 @@ def parse():
     base_path = '/home/sg955/GitWS/IL_for_SSL/results/Interact_MAE/'
     base_file = 'encoder_'+args.loadep+'.pt'
     args.load_ckpt_path = os.path.join(base_path,args.modelsize.lower(),
-                           args.loadrun,'checkpoint', base_file)   
+                           args.loadrun,'checkpoint', base_file) 
+    args.load_ckpt_path = 'E:\project2_MAE\IL_for_SSL\results\example_checkpoint\encoder_ep0.pt'
     if args.modelsize.lower()=='tiny':
         enc_params = [192, 12, 3, 512]           # dim, depth, heads, mlp_dim
         dec_params = [512, 1]                    # dec_dim, dec_depth
@@ -129,21 +130,20 @@ def main():
     encoder = ViT(image_size=args.fig_size, patch_size=args.patch_size, num_classes=args.k_clas,
                   dim=args.enc_dim, depth=args.enc_depth, heads=args.enc_heads, mlp_dim=args.enc_mlp)
     mae = my_MAE(encoder=encoder, masking_ratio=0.5, decoder_dim=args.dec_dim, decoder_depth=args.dec_depth)
-    if not args.scratch:
-        mae.load_state_dict(torch.load(args.load_ckpt_path))
     if args.sync_bn:
         print("using apex synced BN")
-        encoder = parallel.convert_syncbn_model(encoder)      
-    encoder.cuda()
+        mae = parallel.convert_syncbn_model(mae)      
+    mae.cuda()
     # Scale learning rate based on global batch size
     #args.lr = args.lr*float(args.batch_size*args.world_size)/256.
-    optimizer = optim.AdamW(encoder.parameters(), lr=args.lr, betas=(0.9, 0.95),
+    optimizer = optim.AdamW(mae.parameters(), lr=args.lr, betas=(0.9, 0.95),
                             weight_decay=args.weight_decay)
     if args.enable_amp:
-        encoder, optimizer = amp.initialize(encoder, optimizer, opt_level="O1")
+        mae, optimizer = amp.initialize(mae, optimizer, opt_level="O1")
     if args.distributed:
-        encoder = DDP(encoder, delay_allreduce=True)
-    
+        mae = DDP(mae, delay_allreduce=True)
+    if not args.scratch:
+        mae.load_state_dict(torch.load(args.load_ckpt_path))    
     # ================== Prepare for the dataloader ===============
     pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
                                 seed=12+args.local_rank, crop=args.fig_size, size=args.fill_size, dali_cpu=False,
@@ -167,9 +167,8 @@ def main():
 
     # ================= Train the model ===========================
     for g in range(args.epochs):
-        train(train_loader, encoder, optimizer, g)
-        _accuracy_validate(val_loader, encoder)
-
+        train(train_loader, mae.encoder, optimizer, g)
+        _accuracy_validate(val_loader, mae.encoder)
         torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
         train_loader.reset()
         val_loader.reset()
