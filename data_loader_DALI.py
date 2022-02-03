@@ -26,9 +26,9 @@ warnings.filterwarnings('ignore')
 def create_dali_pipeline(dataset, crop, size, shard_id, num_shards, dali_cpu=False, is_training=True):
 
     if dataset.lower()=='imagenet':
-        DATA_PATH = '/home/sg955/rds/hpc-work/ImageNet/'
+        DATA_PATH = '/home/sg955/rds/rds-nlp-cdt-VR7brx3H4V8/datasets/ImageNet/'
         if is_training:
-            data_dir = os.path.join(DATA_PATH, 'val')
+            data_dir = os.path.join(DATA_PATH, 'train')
         else:
             data_dir = os.path.join(DATA_PATH, 'val')
     elif dataset.lower()=='tiny':

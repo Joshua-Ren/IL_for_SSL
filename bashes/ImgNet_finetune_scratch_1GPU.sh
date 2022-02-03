@@ -20,6 +20,5 @@ source /home/sg955/egg-env/bin/activate
 cd /home/sg955/GitWS/IL_for_SSL/
 
 srun python ImgNet_finetune_multiGPU.py --enable_amp \
---run_name finetune_1GPU_base_scrath --dataset tiny --modelsize base \
+--run_name scratch_1GPU --dataset tiny --modelsize base \
 --scratch
-#--loadrun tinytry_1GPU --loadep ep400

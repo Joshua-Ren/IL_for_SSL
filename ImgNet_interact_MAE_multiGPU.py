@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Interaction phase (mask reconstruction)
+Interaction phase (MAE)
 """
 import warnings
 warnings.filterwarnings('ignore')
@@ -36,13 +36,13 @@ def parse():
     parser.add_argument('--proj_path',default='Interact_MAE', type=str)
     parser.add_argument('--epochs',default=1000, type=int)
     parser.add_argument('--accfreq',default=10, type=int, help='every xx iteration, update acc')
-    parser.add_argument('--mask_ratio',default=0.5,type=float)
+    parser.add_argument('--mask_ratio',default=0.75,type=float)
     parser.add_argument('--run_name',default=None,type=str)
     parser.add_argument('--enable_amp',action='store_true')
     parser.add_argument('--sync_bn', action='store_true')
     parser.add_argument('--local_rank', default=0, type=int)
     parser.add_argument('--workers',default=4, type=int)
-    parser.add_argument('--record_gap',default=100, type=int)
+    parser.add_argument('--record_gap',default=200, type=int)
     parser.add_argument('--dataset',type=str,default='imagenet',help='can be imagenet, tiny')
     parser.add_argument('--modelsize',type=str,default='tiny',help='ViT model size, must be tiny, small or base')
     args = parser.parse_args()
@@ -157,7 +157,7 @@ def main():
     if args.local_rank==0:
         run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
         #run_name = 'add'
-        save_path = './results/'+args.proj_path+'/'+args.dataset+'/'+args.modelsize+run_name
+        save_path = base_folder+'results/'+args.proj_path+'/'+args.dataset+'/'+args.modelsize+run_name
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)

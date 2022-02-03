@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Interaction phase (mask reconstruction)
+Usually, do not save checkpoints in fine-tune, we only need the accuracy.
 """
 import warnings
 warnings.filterwarnings('ignore')
@@ -13,7 +13,7 @@ import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.utils.data as Data
 import torchvision
-import torchvision.transforms as transforms
+import torchvision.transforms as T
 import pandas as pd
 import numpy as np
 import os
@@ -34,7 +34,7 @@ def parse():
     parser.add_argument('--weight_decay', default=0.05, type=float)
     parser.add_argument('--batch_size',default=1024, type=int)
     parser.add_argument('--seed',default=10086,type=int)
-    parser.add_argument('--proj_path',default='Finetune_MAE', type=str)
+    parser.add_argument('--proj_path',default='Finetune_ImgNet', type=str)
     parser.add_argument('--epochs',default=200, type=int)
     parser.add_argument('--accfreq',default=10, type=int, help='every xx iteration, update acc')
     parser.add_argument('--run_name',default=None,type=str)
@@ -49,10 +49,11 @@ def parse():
     args = parser.parse_args()
     
     # For example ../Interact_MAE/tiny/tinytry_4GPU/checkpoint/encoder_ep0.pt
-    base_path = '/home/sg955/GitWS/IL_for_SSL/results/Interact_MAE/'
+    base_path = base_folder + 'results/Interact_MAE/'
     base_file = 'encoder_'+args.loadep+'.pt'
     args.load_ckpt_path = os.path.join(base_path,args.modelsize.lower(),
-                           args.loadrun,'checkpoint', base_file) 
+                           args.loadrun,'checkpoint', base_file)
+    args.run_name =  args.dataset+'_'+args.modelsize+'_'+ args.loadep+'__'args.run_name                
     if args.modelsize.lower()=='tiny':
         enc_params = [192, 12, 3, 512]           # dim, depth, heads, mlp_dim
         dec_params = [512, 1]                    # dec_dim, dec_depth
@@ -163,7 +164,7 @@ def main():
     if args.local_rank==0:
         run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
         #run_name = 'add'
-        save_path = './results/'+args.proj_path+'/'+args.dataset+'/'+args.modelsize+run_name
+        save_path = base_folder+'results/'+args.proj_path+'/'+run_name
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 
@@ -225,8 +226,6 @@ def _accuracy_validate(val_loader, encoder):
     top5 = AverageMeter()
     # switch to evaluate mode
     encoder.eval()
-
-    end = time.time()
 
     for i, data in enumerate(val_loader):
         x = data[0]["data"]

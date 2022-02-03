@@ -5,13 +5,16 @@ Created on Sat Dec 18 18:00:37 2021
 @author: YIREN
 """
 import torch
+import torchvision
 import wandb
 import random
 import numpy as np
 import os
 import torch.distributed as dist
+import torchvision.transforms as T
 
 WANDB_track_figs = 6
+base_folder = '/home/sg955/rds/rds-nlp-cdt-VR7brx3H4V8/IL_for_SSL/'
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -148,3 +151,33 @@ def wandb_show16imgs(recon_imgs, origi_imgs, table_key='initial', ds_ratio=4):
     show_data = [recon_list,origi_list]    
     show_table = wandb.Table(data=show_data, columns=colunm_list)
     wandb.log({table_key: show_table})  
+
+# ================= CIFAR_loader for single GPU ============================
+def get_cifar_loaders(args):
+    train_T=T.Compose([
+                        T.RandomCrop(32, padding=4),
+                        T.RandomHorizontalFlip(),
+                        T.ToTensor(),
+                        T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                        ])
+    val_T =T.Compose([
+                        T.ToTensor(),
+                        T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+                        ])
+    if args.dataset.lower()=='cifar10':
+        train_loader = torch.utils.data.DataLoader(
+                            torchvision.datasets.CIFAR10('./data', train=True, download=True, transform=train_T),
+                            batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=args.workers)
+        val_loader = torch.utils.data.DataLoader(
+                            torchvision.datasets.CIFAR10('./data', train=False, download=True, transform=val_T),
+                            batch_size=10000, shuffle=False, drop_last=True)    
+    elif args.dataset.lower()=='cifar100':
+        train_loader = torch.utils.data.DataLoader(
+                            torchvision.datasets.CIFAR100('./data', train=True, download=True, transform=train_T),
+                            batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=args.workers)
+        val_loader = torch.utils.data.DataLoader(
+                            torchvision.datasets.CIFAR100('./data', train=False, download=True, transform=val_T),
+                            batch_size=10000, shuffle=False, drop_last=True)
+    else:
+        print('args.dataset must be cifar10 or cifar100')
+    return train_loader, val_loader
