@@ -22,6 +22,7 @@ from utils import *
 import copy
 from vit_pytorch import ViT
 from my_MAE import my_MAE
+from apex import amp, optimizers, parallel
 from einops import rearrange, repeat
 from data_loader_DALI import *
 import torch.distributed as dist
