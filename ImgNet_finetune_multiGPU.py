@@ -53,7 +53,7 @@ def parse():
     base_file = 'encoder_'+args.loadep+'.pt'
     args.load_ckpt_path = os.path.join(base_path,args.modelsize.lower(),
                            args.loadrun,'checkpoint', base_file)
-    args.run_name =  args.dataset+'_'+args.modelsize+'_'+ args.loadep+'__'args.run_name                
+    args.run_name =  args.dataset+'_'+args.modelsize+'_'+ args.loadep+'__'+args.run_name                
     if args.modelsize.lower()=='tiny':
         enc_params = [192, 12, 3, 512]           # dim, depth, heads, mlp_dim
         dec_params = [512, 1]                    # dec_dim, dec_depth
