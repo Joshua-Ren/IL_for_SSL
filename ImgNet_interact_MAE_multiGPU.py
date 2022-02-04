@@ -62,7 +62,7 @@ def parse():
     [args.dec_dim, args.dec_depth] = dec_params
 
     if args.dataset.lower()=='imagenet':
-        tmp_kfp=[1000, 256, 224, 14, 4] # k_clas, fill_size, fig_size, patch_size, ds_ratio
+        tmp_kfp=[1000, 256, 224, 16, 4] # k_clas, fill_size, fig_size, patch_size, ds_ratio
     elif args.dataset.lower()=='tiny':
         tmp_kfp=[200, 64, 64, 8, 1]
     else:
