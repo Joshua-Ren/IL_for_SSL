@@ -43,8 +43,9 @@ def create_dali_pipeline(dataset, crop, size, shard_id, num_shards, dali_cpu=Fal
     dali_device = 'cpu' if dali_cpu else 'gpu'
     decoder_device = 'cpu' if dali_cpu else 'mixed'
     if is_training:
-        images = fn.decoders.image_random_crop(images, device=decoder_device, output_type=types.RGB, random_aspect_ratio=[0.8, 1.25], 
-                                                random_area=[0.1, 1.0], num_attempts=100)
+        #images = fn.decoders.image_random_crop(images, device=decoder_device, output_type=types.RGB, random_aspect_ratio=[0.8, 1.25], 
+        #                                        random_area=[0.1, 1.0], num_attempts=100)
+        images = fn.decoders.image(images, device=decoder_device, output_type=types.RGB)
         images = fn.resize(images, device=dali_device, resize_x=crop, resize_y=crop, interp_type=types.INTERP_TRIANGULAR)
         mirror = fn.random.coin_flip(probability=0.5)
     else:
