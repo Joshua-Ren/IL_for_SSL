@@ -31,7 +31,7 @@ def parse():
     parser = argparse.ArgumentParser(description='ImageNet-MAE')
     parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
     parser.add_argument('--weight_decay', default=0.05, type=float)
-    parser.add_argument('--batch_size',default=1024, type=int)
+    parser.add_argument('--batch_size',default=256, type=int)
     parser.add_argument('--seed',default=10086,type=int)
     parser.add_argument('--proj_path',default='Interact_MAE', type=str)
     parser.add_argument('--epochs',default=1000, type=int)
