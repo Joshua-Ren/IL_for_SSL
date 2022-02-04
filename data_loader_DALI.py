@@ -49,7 +49,8 @@ def create_dali_pipeline(dataset, crop, size, shard_id, num_shards, dali_cpu=Fal
         mirror = fn.random.coin_flip(probability=0.5)
     else:
         images = fn.decoders.image(images, device=decoder_device, output_type=types.RGB)
-        images = fn.resize(images, device=dali_device, size=size, mode="not_smaller", interp_type=types.INTERP_TRIANGULAR)
+        images = fn.resize(images, device=dali_device, resize_x=crop, resize_y=crop, mode="not_smaller", interp_type=types.INTERP_TRIANGULAR)
+        #images = fn.resize(images, device=dali_device, size=size, mode="not_smaller", interp_type=types.INTERP_TRIANGULAR)
         mirror = False
 
     images = fn.crop_mirror_normalize(images.gpu(), dtype=types.FLOAT, output_layout="CHW",
