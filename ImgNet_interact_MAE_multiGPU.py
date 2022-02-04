@@ -68,7 +68,7 @@ def parse():
     else:
         print('dataset must be imagenet or tiny')
     [args.k_clas, args.fill_size, args.fig_size, args.patch_size, args.ds_ratio] = tmp_kfp
-    args.patch_num=int(args.fig_size/args.patch_size)
+    args.patch_num=int(args.fill_size/args.patch_size)
     return args
 
 # =================== Some utils functions ==========================
@@ -166,11 +166,9 @@ def main():
         
     # ================= Train the model ===========================
     for g in range(args.epochs):
-        train(train_loader, mae, optimizer, g)
-        # ----- Do validation only on rank0
         if args.local_rank==0:
             _recon_validate(TRACK_TVX, mae,table_key='latest')
-
+        # ----- Do validation only on rank0
         if g%args.record_gap == 0:
             if args.local_rank==0:
                 CK_PATH = checkpoint_save_interact(mae, g, save_path)
@@ -180,6 +178,7 @@ def main():
                 map_location = {'cuda:%d' % 0: 'cuda:%d' % args.local_rank}
                 mae.load_state_dict(
                     torch.load(CK_PATH, map_location=map_location))
+        train(train_loader, mae, optimizer, g)
         #torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
         train_loader.reset()
         #val_loader.reset() 
