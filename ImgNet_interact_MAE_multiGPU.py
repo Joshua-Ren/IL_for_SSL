@@ -157,6 +157,7 @@ def main():
     if args.local_rank==0:
         run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
         #run_name = 'add'
+        base_folder = '/home/sg955/GitWS/IL_for_SSL/'
         save_path = base_folder+'results/'+args.proj_path+'/'+args.dataset+'/'+args.modelsize+run_name
         if not os.path.exists(save_path):
             os.makedirs(save_path)
