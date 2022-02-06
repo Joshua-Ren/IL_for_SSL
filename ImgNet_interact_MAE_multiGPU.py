@@ -13,7 +13,7 @@ import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.utils.data as Data
 import torchvision
-import torchvision.transforms as transforms
+import torchvision.transforms as T
 import pandas as pd
 import numpy as np
 import os
@@ -25,6 +25,7 @@ from vit_pytorch import ViT
 from my_MAE import my_MAE
 from einops import rearrange, repeat
 from data_loader_DALI import *
+from data_loader_lmdb import ImageFolderLMDB
 import torch.distributed as dist
 
 def parse():
@@ -41,7 +42,7 @@ def parse():
     parser.add_argument('--enable_amp',action='store_true')
     parser.add_argument('--sync_bn', action='store_true')
     parser.add_argument('--local_rank', default=0, type=int)
-    parser.add_argument('--workers',default=4, type=int)
+    parser.add_argument('--workers',default=8, type=int)
     parser.add_argument('--record_gap',default=50, type=int)
     parser.add_argument('--dataset',type=str,default='imagenet',help='can be imagenet, tiny')
     parser.add_argument('--modelsize',type=str,default='tiny',help='ViT model size, must be tiny, small or base')
@@ -141,6 +142,7 @@ def main():
         mae = DDP(mae, delay_allreduce=True)
 
     # ================== Prepare for the dataloader ===============
+    '''
     pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
                                 seed=12+args.local_rank, crop=args.fig_size, size=args.fill_size, dali_cpu=False,
                                 shard_id=args.local_rank, num_shards=args.world_size, is_training=True)
@@ -152,7 +154,25 @@ def main():
                                 shard_id=args.local_rank, num_shards=args.world_size, is_training=False)
     pipe.build()
     val_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
-    
+    '''
+    normalize = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    traindir = os.path.join('/home/sg955/rds/rds-nlp-cdt-VR7brx3H4V8/datasets/ImageNet/', 'train.lmdb')
+    valdir = os.path.join('/home/sg955/rds/rds-nlp-cdt-VR7brx3H4V8/datasets/ImageNet/', 'val.lmdb')
+    train_set = ImageFolderLMDB(
+        traindir, T.Compose([T.RandomResizedCrop(args.fig_size), T.RandomHorizontalFlip(),
+            T.ToTensor(), normalize, ]))
+    val_set = ImageFolderLMDB(
+        valdir, T.Compose([ T.Resize(args.fill_size), T.CenterCrop(args.fig_size),
+            T.ToTensor(),normalize, ]))
+    train_sampler = torch.utils.data.distributed.DistributedSampler(train_set)
+    train_loader = torch.utils.data.DataLoader(
+        train_set, batch_size=args.batch_size, shuffle=(train_sampler is None),
+        num_workers=args.workers, pin_memory=True, sampler=train_sampler)
+
+    val_loader = torch.utils.data.DataLoader(
+        val_set, batch_size=args.batch_size, shuffle=False,
+        num_workers=args.workers, pin_memory=True)    
+
     # =================== Initialize wandb ========================
     if args.local_rank==0:
         run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
