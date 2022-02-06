@@ -28,9 +28,9 @@ def create_dali_pipeline(dataset, crop, size, shard_id, num_shards, dali_cpu=Fal
     if dataset.lower()=='imagenet':
         DATA_PATH = '/home/sg955/rds/rds-nlp-cdt-VR7brx3H4V8/datasets/ImageNet/'
         if is_training:
-            data_dir = os.path.join(DATA_PATH, 'train.lmdb')
+            data_dir = os.path.join(DATA_PATH, 'train_caffe')
         else:
-            data_dir = os.path.join(DATA_PATH, 'val.lmdb')
+            data_dir = os.path.join(DATA_PATH, 'val_caffe')
         images, labels = fn.readers.caffe(path=data_dir, shard_id=shard_id, num_shards=num_shards,
                                          pad_last_batch=True)
     elif dataset.lower()=='tiny':
