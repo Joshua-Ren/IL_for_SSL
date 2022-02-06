@@ -42,7 +42,7 @@ def parse():
     parser.add_argument('--sync_bn', action='store_true')
     parser.add_argument('--local_rank', default=0, type=int)
     parser.add_argument('--workers',default=4, type=int)
-    parser.add_argument('--record_gap',default=100, type=int)
+    parser.add_argument('--record_gap',default=50, type=int)
     parser.add_argument('--dataset',type=str,default='imagenet',help='can be imagenet, tiny')
     parser.add_argument('--modelsize',type=str,default='tiny',help='ViT model size, must be tiny, small or base')
     args = parser.parse_args()
