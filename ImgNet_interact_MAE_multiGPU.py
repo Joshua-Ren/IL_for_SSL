@@ -200,7 +200,7 @@ def main():
                     torch.load(CK_PATH, map_location=map_location))
         train(train_loader, mae, optimizer, g)
         #torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
-        train_loader.reset()
+        #train_loader.reset()
         #val_loader.reset() 
 
 def train(train_loader, mae, optimizer, g):
