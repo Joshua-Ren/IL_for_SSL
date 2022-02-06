@@ -28,18 +28,19 @@ def create_dali_pipeline(dataset, crop, size, shard_id, num_shards, dali_cpu=Fal
     if dataset.lower()=='imagenet':
         DATA_PATH = '/home/sg955/rds/rds-nlp-cdt-VR7brx3H4V8/datasets/ImageNet/'
         if is_training:
-            data_dir = os.path.join(DATA_PATH, 'train')
+            data_dir = os.path.join(DATA_PATH, 'train.lmdb')
         else:
-            data_dir = os.path.join(DATA_PATH, 'val')
+            data_dir = os.path.join(DATA_PATH, 'val.lmdb')
+        images, labels = fn.readers.caffe(file_root=data_dir, shard_id=shard_id, num_shards=num_shards,
+                                        random_shuffle=is_training, pad_last_batch=True, name="Reader")
     elif dataset.lower()=='tiny':
         DATA_PATH = '/home/sg955/rds/hpc-work/tiny-imagenet-200/'
         if is_training:
             data_dir = os.path.join(DATA_PATH, 'train')
         else:
             data_dir = os.path.join(DATA_PATH, 'val')
-    
-    images, labels = fn.readers.file(file_root=data_dir, shard_id=shard_id, num_shards=num_shards,
-                                    random_shuffle=is_training, pad_last_batch=True, name="Reader")
+        images, labels = fn.readers.file(file_root=data_dir, shard_id=shard_id, num_shards=num_shards,
+                                        random_shuffle=is_training, pad_last_batch=True, name="Reader")
     dali_device = 'cpu' if dali_cpu else 'gpu'
     decoder_device = 'cpu' if dali_cpu else 'mixed'
     if is_training:
