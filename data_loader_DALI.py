@@ -32,7 +32,7 @@ def create_dali_pipeline(dataset, crop, size, shard_id, num_shards, dali_cpu=Fal
         else:
             data_dir = os.path.join(DATA_PATH, 'val_caffe')
         images, labels = fn.readers.caffe(path=data_dir, shard_id=shard_id, num_shards=num_shards,
-                                         pad_last_batch=True)
+                                         pad_last_batch=True, name="Reader")
     elif dataset.lower()=='tiny':
         DATA_PATH = '/home/sg955/rds/hpc-work/tiny-imagenet-200/'
         if is_training:
