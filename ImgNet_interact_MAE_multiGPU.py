@@ -24,7 +24,6 @@ import copy
 from vit_pytorch import ViT
 from my_MAE import my_MAE
 from einops import rearrange, repeat
-from data_loader_DALI import *
 from data_loader_lmdb import ImageFolderLMDB
 import torch.distributed as dist
 
@@ -192,6 +191,7 @@ def main():
         if g%args.record_gap == 0:
             if args.local_rank==0:
                 CK_PATH = checkpoint_save_interact(mae, g, save_path)
+                _recon_validate(TRACK_TVX, mae,table_key='ep'+str(g))
             if False:#args.distributed:
                 dist.barrier()
                 # configure map_location properly

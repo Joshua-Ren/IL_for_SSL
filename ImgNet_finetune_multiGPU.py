@@ -16,6 +16,7 @@ import torchvision
 import torchvision.transforms as T
 import pandas as pd
 import numpy as np
+from data_loader_lmdb import ImageFolderLMDB
 import os
 import argparse
 import random
@@ -24,7 +25,6 @@ import copy
 from vit_pytorch import ViT
 from my_MAE import my_MAE
 from einops import rearrange, repeat
-from data_loader_DALI import *
 import torch.distributed as dist
 
 def parse():
@@ -59,10 +59,10 @@ def parse():
         dec_params = [512, 1]                    # dec_dim, dec_depth
     elif args.modelsize.lower()=='small':
         enc_params = [384, 12, 6, 1024]          # dim, depth, heads, mlp_dim
-        dec_params = [1024, 2]                   # dec_dim, dec_depth
+        dec_params = [512, 1] #[1024, 2]                   # dec_dim, dec_depth
     elif args.modelsize.lower()=='base':
         enc_params = [768, 12, 12, 2048]         # dim, depth, heads, mlp_dim
-        dec_params = [2048, 4]                   # dec_dim, dec_depth
+        dec_params = [512, 1] #[2048, 4]                   # dec_dim, dec_depth
     else:
         print('ViT model size must be tiny, small, or base')
     [args.enc_dim, args.enc_depth, args.enc_heads, args.enc_mlp] = enc_params
@@ -148,18 +148,24 @@ def main():
         encoder = DDP(encoder, delay_allreduce=True)
  
     # ================== Prepare for the dataloader ===============
-    pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
-                                seed=12+args.local_rank, crop=args.fig_size, size=args.fill_size, dali_cpu=False,
-                                shard_id=args.local_rank, num_shards=args.world_size, is_training=True)
-    pipe.build()
-    train_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
-    
-    pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
-                                seed=12+args.local_rank, crop=args.fig_size, size=args.fill_size, dali_cpu=False,
-                                shard_id=args.local_rank, num_shards=args.world_size, is_training=False)
-    pipe.build()
-    val_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
-    
+    normalize = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    traindir = os.path.join('/home/sg955/rds/rds-nlp-cdt-VR7brx3H4V8/datasets/ImageNet/', 'train.lmdb')
+    valdir = os.path.join('/home/sg955/rds/rds-nlp-cdt-VR7brx3H4V8/datasets/ImageNet/', 'val.lmdb')
+    train_set = ImageFolderLMDB(
+        traindir, T.Compose([T.RandomResizedCrop(args.fig_size), T.RandomHorizontalFlip(),
+            T.ToTensor(), normalize, ]))
+    val_set = ImageFolderLMDB(
+        valdir, T.Compose([ T.Resize(args.fill_size), T.CenterCrop(args.fig_size),
+            T.ToTensor(),normalize, ]))
+    train_sampler = torch.utils.data.distributed.DistributedSampler(train_set)
+    train_loader = torch.utils.data.DataLoader(
+        train_set, batch_size=args.batch_size, shuffle=(train_sampler is None),
+        num_workers=args.workers, pin_memory=True, sampler=train_sampler)
+
+    val_loader = torch.utils.data.DataLoader(
+        val_set, batch_size=args.batch_size, shuffle=False,
+        num_workers=args.workers, pin_memory=True)    
+
     # =================== Initialize wandb ========================
     if args.local_rank==0:
         run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
@@ -182,9 +188,9 @@ def train(train_loader, encoder, optimizer, g):
     top5 = AverageMeter()
     encoder.train()
 
-    for i, data in enumerate(train_loader):
-        x = data[0]["data"]
-        y = data[0]["label"].squeeze(-1).long()
+    for i, (x, y) in enumerate(train_loader):
+        x = x.cuda(args.gpu, non_blocking=True)
+        y = y.cuda(args.gpu, non_blocking=True)
         # compute output, for encoder, we need cls token to get hid
         hid = encoder(x)
         loss = nn.CrossEntropyLoss()(hid, y)
@@ -227,9 +233,9 @@ def _accuracy_validate(val_loader, encoder):
     # switch to evaluate mode
     encoder.eval()
 
-    for i, data in enumerate(val_loader):
-        x = data[0]["data"]
-        y = data[0]["label"].squeeze(-1).long()
+    for i, (x, y) in enumerate(val_loader):
+        x = x.cuda(args.gpu, non_blocking=True)
+        y = y.cuda(args.gpu, non_blocking=True)
 
         # compute output
         with torch.no_grad():
