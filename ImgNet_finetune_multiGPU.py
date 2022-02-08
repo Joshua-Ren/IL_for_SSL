@@ -44,11 +44,12 @@ def parse():
     parser.add_argument('--workers',default=4, type=int)
     parser.add_argument('--dataset',type=str,default='tiny',help='can be imagenet, tiny')
     parser.add_argument('--modelsize',type=str,default='tiny',help='ViT model size, must be tiny, small or base')
-    parser.add_argument('--loadrun',type=str,default='tinytry_4GPU')
+    parser.add_argument('--loadrun',type=str,default='basetry_4GPU_1kbs')
     parser.add_argument('--loadep',type=str,default='ep0')
     args = parser.parse_args()
-    
+    #/home/sg955/GitWS/IL_for_SSL/results/Interact_MAE/imagenet/basetry_4GPU_1kbs/checkpoint
     # For example ../Interact_MAE/tiny/tinytry_4GPU/checkpoint/encoder_ep0.pt
+    base_folder = '/home/sg955/GitWS/IL_for_SSL/'
     base_path = base_folder + 'results/Interact_MAE/'
     base_file = 'encoder_'+args.loadep+'.pt'
     args.load_ckpt_path = os.path.join(base_path,args.modelsize.lower(),
