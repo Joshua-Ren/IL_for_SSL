@@ -70,9 +70,9 @@ def parse():
     [args.dec_dim, args.dec_depth] = dec_params
 
     if args.dataset.lower()=='cifar10':
-        tmp_kfp=[1000, 256, 224, 14, 1] # k_clas, fill_size, fig_size, patch_size, ds_ratio
+        tmp_kfp=[1000, 256, 256, 16, 1] # k_clas, fill_size, fig_size, patch_size, ds_ratio
     elif args.dataset.lower()=='cifar100':
-        tmp_kfp=[1000, 256, 224, 14, 1] # k_clas, fill_size, fig_size, patch_size, ds_ratio
+        tmp_kfp=[1000, 256, 256, 16, 1] # k_clas, fill_size, fig_size, patch_size, ds_ratio
     else:
         print('dataset must be cifar10 or cifar100')
     [args.k_clas, args.fill_size, args.fig_size, args.patch_size, args.ds_ratio] = tmp_kfp
