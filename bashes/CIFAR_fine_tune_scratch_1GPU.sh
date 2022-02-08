@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -A NLP-CDT-SL2-GPU
-#SBATCH -p pascal
+#SBATCH -p ampere
 #SBATCH --time=36:00:00
 #SBATCH --job-name=C-finetune
 #SBATCH --output=./logs/test.txt
