@@ -32,7 +32,7 @@ def parse():
     parser.add_argument('--scratch',action='store_true',help='train from scratch')
     parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
     parser.add_argument('--weight_decay', default=0.05, type=float)
-    parser.add_argument('--batch_size',default=1024, type=int)
+    parser.add_argument('--batch_size',default=512, type=int)
     parser.add_argument('--seed',default=10086,type=int)
     parser.add_argument('--proj_path',default='Finetune_CIFAR', type=str)
     parser.add_argument('--epochs',default=200, type=int)
@@ -112,12 +112,12 @@ def main():
     encoder = ViT(image_size=args.fig_size, patch_size=args.patch_size, num_classes=args.k_clas,
                   dim=args.enc_dim, depth=args.enc_depth, heads=args.enc_heads, mlp_dim=args.enc_mlp)
     mae = my_MAE(encoder=encoder, masking_ratio=0.75, decoder_dim=args.dec_dim, decoder_depth=args.dec_depth)
-    mae.cuda()
     if not args.scratch:
         ckp = ckp_converter(torch.load(args.load_ckpt_path))
         mae.load_state_dict(ckp)
 
     # Scale learning rate based on global batch size
+    encoder.cuda()
     args.lr = args.lr*float(args.batch_size)/256.
     optimizer = optim.AdamW(encoder.parameters(), lr=args.lr, betas=(0.9, 0.95),
                             weight_decay=args.weight_decay)

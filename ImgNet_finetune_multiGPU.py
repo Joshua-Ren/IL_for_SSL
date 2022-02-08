@@ -134,12 +134,13 @@ def main():
     if args.sync_bn:
         print("using apex synced BN")
         mae = parallel.convert_syncbn_model(mae)      
-    mae.cuda()
+    
     if not args.scratch:
         ckp = ckp_converter(torch.load(args.load_ckpt_path))
         mae.load_state_dict(ckp)
 
     # Scale learning rate based on global batch size
+    encoder.cuda()
     args.lr = args.lr*float(args.batch_size*args.world_size)/256.
     optimizer = optim.AdamW(encoder.parameters(), lr=args.lr, betas=(0.9, 0.95),
                             weight_decay=args.weight_decay)

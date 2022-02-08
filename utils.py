@@ -171,17 +171,17 @@ def get_cifar_loaders(args):
     if args.dataset.lower()=='cifar10':
         train_loader = torch.utils.data.DataLoader(
                             torchvision.datasets.CIFAR10('./data', train=True, download=True, transform=train_T),
-                            batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=args.workers)
+                            batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=args.workers, pin_memory=True)
         val_loader = torch.utils.data.DataLoader(
                             torchvision.datasets.CIFAR10('./data', train=False, download=True, transform=val_T),
-                            batch_size=10000, shuffle=False, drop_last=True)    
+                            batch_size=1000, shuffle=False, drop_last=True,pin_memory=True)    
     elif args.dataset.lower()=='cifar100':
         train_loader = torch.utils.data.DataLoader(
                             torchvision.datasets.CIFAR100('./data', train=True, download=True, transform=train_T),
-                            batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=args.workers)
+                            batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=args.workers,pin_memory=True)
         val_loader = torch.utils.data.DataLoader(
                             torchvision.datasets.CIFAR100('./data', train=False, download=True, transform=val_T),
-                            batch_size=10000, shuffle=False, drop_last=True)
+                            batch_size=1000, shuffle=False, drop_last=True,pin_memory=True)
     else:
         print('args.dataset must be cifar10 or cifar100')
     return train_loader, val_loader
