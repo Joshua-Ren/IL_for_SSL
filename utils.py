@@ -157,12 +157,14 @@ def wandb_show16imgs(recon_imgs, origi_imgs, table_key='initial', ds_ratio=4):
 # ================= CIFAR_loader for single GPU ============================
 def get_cifar_loaders(args):
     train_T=T.Compose([
-                        T.RandomCrop(32, padding=4),
+                        T.Resize(256),
+                        T.RandomCrop(256, padding=16),
                         T.RandomHorizontalFlip(),
                         T.ToTensor(),
                         T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
                         ])
     val_T =T.Compose([
+                        T.Resize(256),
                         T.ToTensor(),
                         T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
                         ])
