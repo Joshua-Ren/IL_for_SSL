@@ -47,7 +47,7 @@ def parse():
     parser.add_argument('--loadrun',type=str,default='basetry_4GPU_1kbs')
     parser.add_argument('--loadep',type=str,default='ep0')
     args = parser.parse_args()
-    #/home/sg955/GitWS/IL_for_SSL/results/Interact_MAE/imagenet/basetry_4GPU_1kbs/checkpoint
+    #/home/sg955/GitWS/IL_for_SSL/results/Interact_MAE/base/basetry_4GPU_1kbs/checkpoint
     # For example ../Interact_MAE/tiny/tinytry_4GPU/checkpoint/encoder_ep0.pt
     base_folder = '/home/sg955/GitWS/IL_for_SSL/'
     base_path = base_folder + 'results/Interact_MAE/'
