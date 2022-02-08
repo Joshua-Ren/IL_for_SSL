@@ -5,7 +5,7 @@
 #SBATCH --job-name=C-finet
 #SBATCH --output=./logs/test.txt
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:2
 
 export NCCL_P2P_DISABLE=1
 export NCCL_IB_DISABLE=1
