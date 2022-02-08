@@ -49,6 +49,7 @@ def parse():
     args = parser.parse_args()
     
     # For example ../Interact_MAE/tiny/tinytry_4GPU/checkpoint/encoder_ep0.pt
+    base_folder = '/home/sg955/GitWS/IL_for_SSL/'
     base_path = base_folder + 'results/Interact_MAE/'
     base_file = 'encoder_'+args.loadep+'.pt'
     args.load_ckpt_path = os.path.join(base_path,args.modelsize.lower(),
