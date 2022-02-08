@@ -52,7 +52,7 @@ def parse():
     base_folder = '/home/sg955/GitWS/IL_for_SSL/'
     base_path = base_folder + 'results/Interact_MAE/'
     base_file = 'encoder_'+args.loadep+'.pt'
-    args.load_ckpt_path = os.path.join(base_path,#args.modelsize.lower(),
+    args.load_ckpt_path = os.path.join(base_path, args.dataset.lower(),
                            args.loadrun,'checkpoint', base_file) 
     args.run_name =  args.dataset+'_'+args.modelsize+'_'+ args.loadep+'__'+args.run_name
     if args.modelsize.lower()=='tiny':
