@@ -195,6 +195,7 @@ def _accuracy_validate(val_loader, encoder):
     wandb.log({'valid_top1':top1.avg})
     wandb.log({'valid_top5':top5.avg})
 if __name__ == '__main__':
+    torch.cuda.empty_cache()
     main() 
 
 
