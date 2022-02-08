@@ -145,7 +145,7 @@ def train(train_loader, encoder, optimizer, g):
     encoder.train()
 
     for i, (x,y) in enumerate(train_loader):
-        x,y  = x.float().cuda(), y.long().cuda()
+        x,y  = x.cuda(non_blocking=True), y.long().cuda(non_blocking=True)
         # compute output, for encoder, we need cls token to get hid
         hid = encoder(x)
         loss = nn.CrossEntropyLoss()(hid, y)
@@ -195,7 +195,6 @@ def _accuracy_validate(val_loader, encoder):
     wandb.log({'valid_top1':top1.avg})
     wandb.log({'valid_top5':top5.avg})
 if __name__ == '__main__':
-    torch.cuda.empty_cache()
     main() 
 
 

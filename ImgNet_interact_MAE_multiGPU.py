@@ -208,9 +208,8 @@ def train(train_loader, mae, optimizer, g):
     
     #for i, data in enumerate(train_loader):
     #    x = data[0]["data"]
-    for i, (x, y) in enumerate(train_loader):
-        x = x.cuda(args.gpu, non_blocking=True)
-        y = y.cuda(args.gpu, non_blocking=True)
+    for i, (x, _) in enumerate(train_loader):
+        x = x.cuda(non_blocking=True)
         # compute output
         loss,_ = mae(x)
         optimizer.zero_grad()

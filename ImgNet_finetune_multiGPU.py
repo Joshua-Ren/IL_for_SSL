@@ -191,8 +191,8 @@ def train(train_loader, encoder, optimizer, g):
     encoder.train()
 
     for i, (x, y) in enumerate(train_loader):
-        x = x.cuda(args.gpu, non_blocking=True)
-        y = y.cuda(args.gpu, non_blocking=True)
+        x = x.cuda(non_blocking=True)
+        y = y.cuda(non_blocking=True)
         # compute output, for encoder, we need cls token to get hid
         hid = encoder(x)
         loss = nn.CrossEntropyLoss()(hid, y)

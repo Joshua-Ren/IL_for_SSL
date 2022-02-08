@@ -2,7 +2,7 @@
 #SBATCH -A NLP-CDT-SL2-GPU
 #SBATCH -p ampere
 #SBATCH --time=36:00:00
-#SBATCH --job-name=C-finetune
+#SBATCH --job-name=C-finet
 #SBATCH --output=./logs/test.txt
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
@@ -20,5 +20,5 @@ source /home/sg955/egg-env/bin/activate
 cd /home/sg955/GitWS/IL_for_SSL/
 
 srun python CIFAR_finetune_singleGPU.py --enable_amp \
---run_name scratch_1GPU --dataset cifar100 --modelsize base \
+--run_name 1GPU --dataset cifar100 --modelsize base \
 --loadrun basetry_4GPU_1kbs --loadep ep50
