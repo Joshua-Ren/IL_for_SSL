@@ -32,7 +32,7 @@ def _gpu_mem(pos='A'):
     pynvml.nvmlInit()
     handle=pynvml.nvmlDeviceGetHandleByIndex(0)
     meminfo = pynvml.nvmlDeviceGetMemoryInfo(handle)
-    print(pos+str(meminfo.used))
+    print(pos+str(meminfo.used/meminfo.total))
 
 def parse():
     parser = argparse.ArgumentParser(description='CIFAR-Finetune')
