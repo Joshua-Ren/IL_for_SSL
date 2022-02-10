@@ -153,7 +153,7 @@ def train(train_loader, encoder, optimizer, g):
 
     for i, (x,y) in enumerate(train_loader):
         _gpu_mem('A')
-        x,y  = x.cuda(non_blocking=True), y.long().cuda(non_blocking=True)
+        x,y  = x.cuda(), y.long().cuda()
         _gpu_mem('B')
         # compute output, for encoder, we need cls token to get hid
         hid = encoder(x)
