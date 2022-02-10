@@ -21,4 +21,4 @@ cd /home/sg955/GitWS/IL_for_SSL/
 
 srun python CIFAR_finetune_singleGPU.py \
 --run_name 1GPU_sbs --dataset cifar100 --modelsize base \
---loadrun basetry_4GPU --loadep ep250
+--loadrun basetry_4GPU --loadep ep350
