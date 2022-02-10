@@ -39,7 +39,7 @@ def parse():
     parser.add_argument('--scratch',action='store_true',help='train from scratch')
     parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
     parser.add_argument('--weight_decay', default=0.05, type=float)
-    parser.add_argument('--batch_size',default=512, type=int)
+    parser.add_argument('--batch_size',default=256, type=int)
     parser.add_argument('--seed',default=10086,type=int)
     parser.add_argument('--proj_path',default='Finetune_CIFAR', type=str)
     parser.add_argument('--epochs',default=200, type=int)
@@ -152,12 +152,9 @@ def train(train_loader, encoder, optimizer, g):
     encoder.train()
 
     for i, (x,y) in enumerate(train_loader):
-        _gpu_mem('A')
         x,y  = x.cuda(), y.long().cuda()
-        _gpu_mem('B')
         # compute output, for encoder, we need cls token to get hid
         hid = encoder(x)
-        _gpu_mem('C')
         loss = nn.CrossEntropyLoss()(hid, y)
         optimizer.zero_grad()
         if args.enable_amp:

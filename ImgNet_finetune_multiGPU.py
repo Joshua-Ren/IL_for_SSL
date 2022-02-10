@@ -32,7 +32,7 @@ def parse():
     parser.add_argument('--scratch',action='store_true',help='train from scratch')
     parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
     parser.add_argument('--weight_decay', default=0.05, type=float)
-    parser.add_argument('--batch_size',default=512, type=int)
+    parser.add_argument('--batch_size',default=256, type=int)
     parser.add_argument('--seed',default=10086,type=int)
     parser.add_argument('--proj_path',default='Finetune_ImgNet', type=str)
     parser.add_argument('--epochs',default=200, type=int)
