@@ -19,6 +19,6 @@ source /home/sg955/egg-env/bin/activate
 
 cd /home/sg955/GitWS/IL_for_SSL/
 
-srun python CIFAR_finetune_singleGPU.py --enable_amp \
+srun python CIFAR_finetune_singleGPU.py \
 --run_name 1GPU --dataset cifar100 --modelsize base \
 --loadrun basetry_4GPU_1kbs --loadep ep50
