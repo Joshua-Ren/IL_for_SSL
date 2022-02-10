@@ -20,5 +20,5 @@ source /home/sg955/egg-env/bin/activate
 cd /home/sg955/GitWS/IL_for_SSL/
 
 srun python -m torch.distributed.launch --nproc_per_node=4 --master_port 10086 ImgNet_finetune_multiGPU.py --enable_amp \
---run_name scratch_4GPU --dataset tiny --modelsize base \
+--run_name 4GPU --dataset imagenet --modelsize base \
 --loadrun basetry_4GPU_1kbs --loadep ep50
