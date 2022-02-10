@@ -27,6 +27,13 @@ from einops import rearrange, repeat
 from data_loader_DALI import *
 import torch.distributed as dist
 
+def _gpu_mem(pos='A'):
+    import pynvml
+    pynvml.nvmlInit()
+    handle=pynvml.nvmlDeviceGetHandleByIndex(0)
+    meminfo = pynvml.nvmlDeviceGetMemoryInfo(handle)
+    print(pos+str(meminfo.used))
+
 def parse():
     parser = argparse.ArgumentParser(description='CIFAR-Finetune')
     parser.add_argument('--scratch',action='store_true',help='train from scratch')
@@ -104,6 +111,7 @@ def adjust_learning_rate(args, optimizer, epoch):
 
 # ======================== Main and Train ==========================
 def main():
+    _gpu_mem('A')
     global args
     args = parse()
     rnd_seed(args.seed)
@@ -116,6 +124,8 @@ def main():
         ckp = ckp_converter(torch.load(args.load_ckpt_path))
         mae.load_state_dict(ckp)
 
+    _gpu_mem('B')
+
     # Scale learning rate based on global batch size
     encoder.cuda()
     args.lr = args.lr*float(args.batch_size)/256.
@@ -126,7 +136,8 @@ def main():
  
     # ================== Prepare for the dataloader ===============
     train_loader, val_loader = get_cifar_loaders(args)
-        
+    
+    _gpu_mem('C')
     # =================== Initialize wandb ========================
     run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
     #run_name = 'add'
@@ -134,6 +145,7 @@ def main():
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     # ================= Train the model ===========================
+    _gpu_mem('D')
     for g in range(args.epochs):
         train(train_loader, encoder, optimizer, g)
         _accuracy_validate(val_loader, encoder)
