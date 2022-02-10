@@ -111,7 +111,6 @@ def adjust_learning_rate(args, optimizer, epoch):
 
 # ======================== Main and Train ==========================
 def main():
-    _gpu_mem('A')
     global args
     args = parse()
     rnd_seed(args.seed)
@@ -124,8 +123,6 @@ def main():
         ckp = ckp_converter(torch.load(args.load_ckpt_path))
         mae.load_state_dict(ckp)
 
-    _gpu_mem('B')
-
     # Scale learning rate based on global batch size
     encoder.cuda()
     args.lr = args.lr*float(args.batch_size)/256.
@@ -137,7 +134,6 @@ def main():
     # ================== Prepare for the dataloader ===============
     train_loader, val_loader = get_cifar_loaders(args)
     
-    _gpu_mem('C')
     # =================== Initialize wandb ========================
     run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
     #run_name = 'add'
@@ -145,7 +141,6 @@ def main():
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     # ================= Train the model ===========================
-    _gpu_mem('D')
     for g in range(args.epochs):
         train(train_loader, encoder, optimizer, g)
         _accuracy_validate(val_loader, encoder)
@@ -157,9 +152,12 @@ def train(train_loader, encoder, optimizer, g):
     encoder.train()
 
     for i, (x,y) in enumerate(train_loader):
+        _gpu_mem('A')
         x,y  = x.cuda(non_blocking=True), y.long().cuda(non_blocking=True)
+        _gpu_mem('B')
         # compute output, for encoder, we need cls token to get hid
         hid = encoder(x)
+        _gpu_mem('C')
         loss = nn.CrossEntropyLoss()(hid, y)
         optimizer.zero_grad()
         if args.enable_amp:
