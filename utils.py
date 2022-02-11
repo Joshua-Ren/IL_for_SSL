@@ -158,7 +158,8 @@ def wandb_show16imgs(recon_imgs, origi_imgs, table_key='initial', ds_ratio=4):
 def get_cifar_loaders(args):
     train_T=T.Compose([
                         T.Resize(256),
-                        T.RandomCrop(256, padding=16),
+                        T.RandomCrop(256, padding=32),
+                        #T.RandomResizedCrop(256,scale=(0.05, 1.0)),
                         T.RandomHorizontalFlip(),
                         T.ToTensor(),
                         T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))

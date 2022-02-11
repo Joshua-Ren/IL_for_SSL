@@ -126,8 +126,8 @@ def main():
     # Scale learning rate based on global batch size
     encoder.cuda()
     args.lr = args.lr*float(args.batch_size)/256.
-    optimizer = optim.AdamW(encoder.parameters(), lr=args.lr, betas=(0.9, 0.95),
-                            weight_decay=args.weight_decay)
+    #optimizer = optim.AdamW(encoder.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=args.weight_decay)
+    optimizer = optim.SGD(encoder.parameters(), lr=args.lr,weight_decay=1e-4)
     if args.enable_amp:
         encoder, optimizer = amp.initialize(encoder, optimizer, opt_level="O1")
  
