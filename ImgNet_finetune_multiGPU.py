@@ -181,8 +181,7 @@ def main():
         train(train_loader, encoder, optimizer, g)
         _accuracy_validate(val_loader, encoder)
         torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
-        train_loader.reset()
-        val_loader.reset()
+
 
 def train(train_loader, encoder, optimizer, g):
     losses = AverageMeter()
