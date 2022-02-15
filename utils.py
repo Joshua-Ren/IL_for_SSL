@@ -85,27 +85,13 @@ def ckp_converter(orig_model):
         return orig_model
 
 # ================== Functions about wandb ===================================
-def wandb_gen_track_x(train_loader,val_loader):
+def wandb_gen_track_x(train_loader,):
     #for i,data in enumerate(train_loader):
     #    x = data[0]['data']
     for i, (x, y) in enumerate(train_loader):
         break
-    track_tx = x[:WANDB_track_figs]
-    #for i,data in enumerate(val_loader):
-    #    x = data[0]['data']
-    for i, (x, y) in enumerate(val_loader):   
-        break
-    track_vx = x[:WANDB_track_figs]
-    return torch.cat((track_tx,track_vx),0)
-
-def wandb_gen_track_x_old(train_loader,val_loader):
-    for x,y in train_loader:
-        break
-    track_tx = x[:WANDB_track_figs]
-    for x,y in val_loader:
-        break
-    track_vx = x[:WANDB_track_figs]
-    return torch.cat((track_tx,track_vx),0)
+    track_tx = x[:WANDB_track_figs*2]
+    return track_tx
 
 def wandb_init(proj_name='test', run_name=None, config_args=None):
     wandb.init(

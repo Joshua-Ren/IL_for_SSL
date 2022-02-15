@@ -159,7 +159,7 @@ def main():
         save_path = base_folder+'results/'+args.proj_path+'/'+args.modelsize+'/'+run_name
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-        TRACK_TVX = wandb_gen_track_x(train_loader,val_loader)
+        TRACK_TVX = wandb_gen_track_x(train_loader)
         TRACK_TVX = TRACK_TVX.cuda()  
         
     # ================= Train the model ===========================
