@@ -87,9 +87,12 @@ def adjust_learning_rate(args, optimizer, epoch):
     """
         warm up (linearly to lr) 5-10 epoch, then cosine decay to lr_min
     """
-    warmup_ep = 10
+    warmup_ep = 40
     lr_min = 1e-7
-    lr_start = args.lr
+    if args.distributed:
+        lr_start = args.lr*(args.batch_size*4)/256
+    else:
+        lr_start = args.lr*args.batch_size/256
     if epoch<warmup_ep:
         lr_current = lr_min+(lr_start-lr_min)*(epoch)/warmup_ep
     else:
@@ -151,6 +154,12 @@ def main():
     train_loader = torch.utils.data.DataLoader(
         train_set, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
+    for i, (x, _) in enumerate(train_loader):
+        print(x[0])
+        print(x[0].mean())
+        print(x[0].mean())
+        break
+    d
     # =================== Initialize wandb ========================
     if args.local_rank==0:
         run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
@@ -178,7 +187,7 @@ def main():
                 mae.load_state_dict(
                     torch.load(CK_PATH, map_location=map_location))
         train(train_loader, mae, optimizer, g)
-        #torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
+        torch.cuda.synchronize()    # If also use val_loader, open this, but in interact, no need
         #train_loader.reset()
         #val_loader.reset() 
 

@@ -30,12 +30,12 @@ import torch.distributed as dist
 def parse():
     parser = argparse.ArgumentParser(description='ImageNet-Finetune')
     parser.add_argument('--scratch',action='store_true',help='train from scratch')
-    parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
+    parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
     parser.add_argument('--weight_decay', default=0.05, type=float)
     parser.add_argument('--batch_size',default=256, type=int)
     parser.add_argument('--seed',default=10086,type=int)
     parser.add_argument('--proj_path',default='Finetune_ImgNet', type=str)
-    parser.add_argument('--epochs',default=200, type=int)
+    parser.add_argument('--epochs',default=100, type=int)
     parser.add_argument('--accfreq',default=10, type=int, help='every xx iteration, update acc')
     parser.add_argument('--run_name',default=None,type=str)
     parser.add_argument('--enable_amp',action='store_true')
@@ -90,7 +90,7 @@ def adjust_learning_rate(args, optimizer, epoch):
     """
     warm up (linearly to lr) 5-10 epoch, then cosine decay to lr_min
     """
-    warmup_ep = 10
+    warmup_ep = 5
     lr_min = 1e-6
     lr_start = args.lr
     if epoch<warmup_ep:
