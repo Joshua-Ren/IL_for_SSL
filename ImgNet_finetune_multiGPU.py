@@ -174,12 +174,7 @@ def main():
         save_path = base_folder+'results/'+args.proj_path+'/'+run_name
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-            
-    for i, (x, _) in enumerate(train_loader):
-            print(x[0])
-            print(x[0].mean())
-            print(x[0].mean())
-            break
+
     # ================= Train the model ===========================
     for g in range(args.epochs):
         train(train_loader, encoder, optimizer, g)
