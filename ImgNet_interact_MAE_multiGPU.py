@@ -32,7 +32,7 @@ def parse():
     parser.add_argument('--lr', default=1.5e-4, type=float, help='learning rate')
     parser.add_argument('--weight_decay', default=0.05, type=float)
     parser.add_argument('--batch_size',default=256, type=int)
-    parser.add_argument('--seed',default=10086,type=int)
+    parser.add_argument('--seed',default=1086,type=int)
     parser.add_argument('--proj_path',default='Interact_MAE', type=str)
     parser.add_argument('--epochs',default=400, type=int)
     parser.add_argument('--accfreq',default=10, type=int, help='every xx iteration, update acc')
@@ -62,7 +62,7 @@ def parse():
     [args.dec_dim, args.dec_depth] = dec_params
 
     if args.dataset.lower()=='imagenet':
-        tmp_kfp=[1000, 256, 256, 16, 4] # k_clas, fill_size, fig_size, patch_size, ds_ratio
+        tmp_kfp=[1000, 256, 256, 16, 1] # k_clas, fill_size, fig_size, patch_size, ds_ratio
     elif args.dataset.lower()=='tiny':
         tmp_kfp=[200, 64, 64, 8, 1]
     else:
