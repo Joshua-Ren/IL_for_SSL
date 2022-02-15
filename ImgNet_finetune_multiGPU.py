@@ -167,7 +167,12 @@ def main():
     val_loader = torch.utils.data.DataLoader(
         val_set, batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)    
-
+    for i, (x, _) in enumerate(train_loader):
+            print(x[0])
+            print(x[0].mean())
+            print(x[0].mean())
+            break
+        d
     # =================== Initialize wandb ========================
     if args.local_rank==0:
         run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
