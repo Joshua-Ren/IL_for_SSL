@@ -57,13 +57,13 @@ def parse():
     args.run_name =  args.dataset+'_'+args.modelsize+'_'+ args.loadep+'__'+args.run_name                
     if args.modelsize.lower()=='tiny':
         enc_params = [192, 12, 3, 512]           # dim, depth, heads, mlp_dim
-        dec_params = [512, 1]                    # dec_dim, dec_depth
+        dec_params = [512, 6]                    # dec_dim, dec_depth
     elif args.modelsize.lower()=='small':
         enc_params = [384, 12, 6, 1024]          # dim, depth, heads, mlp_dim
-        dec_params = [512, 1] #[1024, 2]                   # dec_dim, dec_depth
+        dec_params = [512, 6] #[1024, 2]                   # dec_dim, dec_depth
     elif args.modelsize.lower()=='base':
         enc_params = [768, 12, 12, 2048]         # dim, depth, heads, mlp_dim
-        dec_params = [512, 1] #[2048, 4]                   # dec_dim, dec_depth
+        dec_params = [512, 6] #[2048, 4]                   # dec_dim, dec_depth
     else:
         print('ViT model size must be tiny, small, or base')
     [args.enc_dim, args.enc_depth, args.enc_heads, args.enc_mlp] = enc_params

@@ -34,7 +34,7 @@ def parse():
     parser.add_argument('--batch_size',default=256, type=int)
     parser.add_argument('--seed',default=10086,type=int)
     parser.add_argument('--proj_path',default='Interact_MAE', type=str)
-    parser.add_argument('--epochs',default=1000, type=int)
+    parser.add_argument('--epochs',default=400, type=int)
     parser.add_argument('--accfreq',default=10, type=int, help='every xx iteration, update acc')
     parser.add_argument('--mask_ratio',default=0.75,type=float)
     parser.add_argument('--run_name',default=None,type=str)
@@ -49,13 +49,13 @@ def parse():
     
     if args.modelsize.lower()=='tiny':
         enc_params = [192, 12, 3, 512]           # dim, depth, heads, mlp_dim
-        dec_params = [512, 1]                    # dec_dim, dec_depth
+        dec_params = [512, 6]                    # dec_dim, dec_depth
     elif args.modelsize.lower()=='small':
         enc_params = [384, 12, 6, 1024]          # dim, depth, heads, mlp_dim
-        dec_params = [512, 1] #[1024, 2]                   # dec_dim, dec_depth
+        dec_params = [512, 6] #[1024, 2]                   # dec_dim, dec_depth
     elif args.modelsize.lower()=='base':
         enc_params = [768, 12, 12, 2048]         # dim, depth, heads, mlp_dim
-        dec_params = [512, 1] #[2048, 4]                   # dec_dim, dec_depth
+        dec_params = [512, 6] #[2048, 4]                   # dec_dim, dec_depth
     else:
         print('ViT model size must be tiny, small, or base')
     [args.enc_dim, args.enc_depth, args.enc_heads, args.enc_mlp] = enc_params
@@ -97,6 +97,7 @@ def adjust_learning_rate(args, optimizer, epoch):
         lr_current = lr_min+0.5*(lr_start-lr_min)*(1+np.cos(degree))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr_current
+    return lr_current
 
 # ======================== Main and Train ==========================
 def main():
@@ -141,37 +142,15 @@ def main():
         mae = DDP(mae, delay_allreduce=True)
 
     # ================== Prepare for the dataloader ===============
-    '''
-    pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
-                                seed=12+args.local_rank, crop=args.fig_size, size=args.fill_size, dali_cpu=False,
-                                shard_id=args.local_rank, num_shards=args.world_size, is_training=True)
-    pipe.build()
-    train_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
-    
-    pipe = create_dali_pipeline(dataset=args.dataset, batch_size=args.batch_size, num_threads=args.workers, device_id=args.local_rank,
-                                seed=12+args.local_rank, crop=args.fig_size, size=args.fill_size, dali_cpu=False,
-                                shard_id=args.local_rank, num_shards=args.world_size, is_training=False)
-    pipe.build()
-    val_loader = DALIClassificationIterator(pipe, reader_name="Reader", last_batch_policy=LastBatchPolicy.PARTIAL)
-    '''
     normalize = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     traindir = os.path.join('/home/sg955/rds/rds-nlp-cdt-VR7brx3H4V8/datasets/ImageNet/', 'train.lmdb')
-    valdir = os.path.join('/home/sg955/rds/rds-nlp-cdt-VR7brx3H4V8/datasets/ImageNet/', 'val.lmdb')
     train_set = ImageFolderLMDB(
         traindir, T.Compose([T.RandomResizedCrop(args.fig_size), T.RandomHorizontalFlip(),
             T.ToTensor(), normalize, ]))
-    val_set = ImageFolderLMDB(
-        valdir, T.Compose([ T.Resize(args.fill_size), T.CenterCrop(args.fig_size),
-            T.ToTensor(),normalize, ]))
     train_sampler = torch.utils.data.distributed.DistributedSampler(train_set)
     train_loader = torch.utils.data.DataLoader(
         train_set, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
-
-    val_loader = torch.utils.data.DataLoader(
-        val_set, batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True)    
-
     # =================== Initialize wandb ========================
     if args.local_rank==0:
         run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)

@@ -20,5 +20,4 @@ source /home/sg955/egg-env/bin/activate
 cd /home/sg955/GitWS/IL_for_SSL/
 
 srun python -m torch.distributed.launch --nproc_per_node=4 --master_port 10086 ImgNet_interact_MAE_multiGPU.py --enable_amp \
---run_name try_4GPU_1kbs --dataset imagenet --modelsize base \
---batch_size 1024
+--run_name try_4GPU_corrlr --dataset imagenet --modelsize base \

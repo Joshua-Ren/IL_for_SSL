@@ -21,7 +21,7 @@ class my_MAE(nn.Module):
         masking_ratio = 0.75,
         decoder_depth = 1,
         decoder_heads = 8,
-        decoder_dim_head = 64
+        decoder_dim_head = 16
     ):
         super().__init__()
         assert masking_ratio > 0 and masking_ratio < 1, 'masking ratio must be kept between 0 and 1'
