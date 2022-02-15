@@ -167,11 +167,6 @@ def main():
     val_loader = torch.utils.data.DataLoader(
         val_set, batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)    
-    for i, (x, _) in enumerate(train_loader):
-            print(x[0])
-            print(x[0].mean())
-            print(x[0].mean())
-            break
     # =================== Initialize wandb ========================
     if args.local_rank==0:
         run_name = wandb_init(proj_name=args.proj_path, run_name=args.run_name, config_args=args)
@@ -179,7 +174,12 @@ def main():
         save_path = base_folder+'results/'+args.proj_path+'/'+run_name
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-
+            
+    for i, (x, _) in enumerate(train_loader):
+            print(x[0])
+            print(x[0].mean())
+            print(x[0].mean())
+            break
     # ================= Train the model ===========================
     for g in range(args.epochs):
         train(train_loader, encoder, optimizer, g)
